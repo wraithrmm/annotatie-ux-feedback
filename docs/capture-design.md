@@ -1,6 +1,6 @@
 # Page capture: the screenshot, the page copy and the chosen part (concept, 6 Nov 2026)
 
-> **Proposal, review owed.** This adds to `platform-design.md` revision 2 (§6 Snapshot, §8 `get_snapshot`, §9.2)
+> **Approved 6 Nov 2026** (every feature, with C1–C5 as answered in §11). This adds to `platform-design.md` revision 2 (§6 Snapshot, §8 `get_snapshot`, §9.2)
 > and to RW-1 §5 ("The snapshot"), and replaces them where they differ. It is drawn in
 > `design/prototype/RW-1a-capture.html` (the widget: what the reporter sees) and in `PT-1-portal.html`
 > (the thread's "Page when reported" panel: what the reviewer sees). **C1–C5 answered 6 Nov 2026 (§11):

@@ -71,6 +71,7 @@ Fixed means it's charged whether or not anyone uses the system. Each one has a d
 | S3 PUT / GET | $0.005 / 1k PUT, $0.0004 / 1k GET | Snapshots only |
 | SSM `GetParameter` | free (standard throughput) | Cached for the life of the Lambda container |
 | Report captures (added 6 Nov 2026) | ≈ 0.5 MB per report in S3 (screenshot ×2, close-up, gzipped page copy): 10k reports ≈ 5 GB ≈ $0.12 / month; 4 uploads per report | Storage, which you accepted. No fixed cost: no image Lambda, no headless browser, and an S3 lifecycle rule (free) instead of a clean-up job (`capture-design.md` §9) |
+| Phone notifications, M1 (added 6 Nov 2026) | Free: the browsers' push services (Apple, Google, Mozilla) charge nothing. One Lambda invocation per notification, inside the existing API function; a few DynamoDB rows per device; the VAPID key pair as one SSM SecureString (standard tier, free) | No fixed cost. Sends only happen when a draft or decision is created (`design/PT-2-mobile-ux-pass.md` §6) |
 
 ## 5. Cloudflare (added 5 Nov 2026)
 

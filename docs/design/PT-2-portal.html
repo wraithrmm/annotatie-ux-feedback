@@ -1,0 +1,813 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3b4cca">
+<title>Annotatie portal</title>
+<!-- PT-2: the portal, phone first (design/PT-2-mobile-ux-pass.md). Revision of the approved PT-1; review owed.
+     Every PT-1 feature, re-laid out so a reviewer can approve, edit or reject with one thumb.
+     Synthetic data only. Self-contained: no network requests. -->
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#fff; --surface-2:#f0f2f5; --border:#d9dde3; --text:#1b1f24; --muted:#5b6470;
+  --accent:#3b4cca; --accent-ink:#fff; --accent-soft:#e8ebfb;
+  --open:#1f6feb; --open-soft:#e3eeff; --answered:#7a4cc2; --answered-soft:#f0e8fb;
+  --progress:#a35f00; --progress-soft:#fdf1dc; --resolved:#2f7d4f; --resolved-soft:#e2f3e8;
+  --draft:#9a3412; --draft-soft:#fde8de; --danger:#b42318; --danger-soft:#fde4e1;
+  --internal:#5b6470; --internal-soft:#eef0f3; --ok:#2f7d4f; --ok-soft:#e2f3e8;
+  --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  --tap:44px; --tap-lg:48px;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif; font-size:16px; line-height:1.45;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1216; --surface:#171b21; --surface-2:#1e232b; --border:#2c333d; --text:#e7eaee; --muted:#9aa4b1;
+  --accent:#8b97ff; --accent-ink:#0f1216; --accent-soft:#232a52;
+  --open:#6ea8ff; --open-soft:#16263f; --answered:#c3a0f5; --answered-soft:#2a1f3d;
+  --progress:#f0b45a; --progress-soft:#33260f; --resolved:#6fcf97; --resolved-soft:#13301f;
+  --draft:#ff9a6b; --draft-soft:#3a1c10; --danger:#ff8a80; --danger-soft:#3b1512;
+  --internal:#9aa4b1; --internal-soft:#222831; --ok:#6fcf97; --ok-soft:#13301f; color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#0f1216; --surface:#171b21; --surface-2:#1e232b; --border:#2c333d; --text:#e7eaee; --muted:#9aa4b1;
+  --accent:#8b97ff; --accent-ink:#0f1216; --accent-soft:#232a52;
+  --open:#6ea8ff; --open-soft:#16263f; --answered:#c3a0f5; --answered-soft:#2a1f3d;
+  --progress:#f0b45a; --progress-soft:#33260f; --resolved:#6fcf97; --resolved-soft:#13301f;
+  --draft:#ff9a6b; --draft-soft:#3a1c10; --danger:#ff8a80; --danger-soft:#3b1512;
+  --internal:#9aa4b1; --internal-soft:#222831; --ok:#6fcf97; --ok-soft:#13301f; color-scheme:dark;}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3,p{margin:0}
+h1{font-size:22px;line-height:1.25} h2{font-size:18px;line-height:1.3} h3{font-size:16px}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.meta{font-size:14px;color:var(--muted)}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:14px;overflow-wrap:anywhere}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.stack{display:flex;flex-direction:column;gap:12px}
+
+/* prototype chrome (not part of the design) */
+.proto{background:#111;color:#eee;font-size:13px;padding:6px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.proto b{color:#ffcf5c} .proto select,.proto button{background:#222;color:#eee;border:1px solid #444;border-radius:6px;padding:3px 6px;font-size:13px;max-width:100%}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:var(--tap);padding:10px 16px;border-radius:10px;border:1px solid var(--border);background:var(--surface);font-weight:600;cursor:pointer;text-decoration:none;color:var(--text)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.lg{min-height:var(--tap-lg)}
+.btn.block{width:100%}
+.btn.icon{width:var(--tap);padding:0}
+.link{background:none;border:0;padding:0;color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:2px;cursor:pointer;min-height:44px;display:inline-flex;align-items:center}
+.tag{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:13px;font-weight:600;white-space:nowrap}
+.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.t-open{background:var(--open-soft);color:var(--open)} .t-answered{background:var(--answered-soft);color:var(--answered)}
+.t-progress{background:var(--progress-soft);color:var(--progress)} .t-resolved{background:var(--resolved-soft);color:var(--resolved)}
+.t-draft{background:var(--draft-soft);color:var(--draft)} .t-internal{background:var(--internal-soft);color:var(--internal)}
+.t-client{background:var(--open-soft);color:var(--open)}
+.count{display:inline-grid;place-items:center;min-width:22px;height:22px;padding:0 6px;border-radius:999px;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--muted)}
+.count.hot{background:var(--draft-soft);color:var(--draft)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+
+/* chips: real radios that wrap (no sideways scrolling) */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 16px;border:0;padding:0}
+.chips label{position:relative;display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:8px 14px;border:1px solid var(--border);border-radius:999px;background:var(--surface);cursor:pointer;font-weight:600;font-size:15px}
+.chips input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.chips label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.chips label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+
+/* ---------- shell ---------- */
+.app{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:calc(100vh - 34px)}
+.side{background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;gap:8px;align-items:center;font-weight:800;font-size:18px;padding:4px 8px 12px}
+.brand i{display:grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-style:normal}
+.nav-h{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:12px 8px 4px}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;text-decoration:none;color:var(--text);min-height:var(--tap)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:700}
+.main{padding:24px 32px 48px;max-width:1180px;width:100%}
+.topbar{display:none}
+.bottombar{display:none}
+.autobar{display:none;align-items:center;gap:8px;background:var(--draft-soft);color:var(--draft);padding:8px 16px;font-size:14px;font-weight:600;border-bottom:1px solid var(--draft)}
+.autobar.on{display:flex}
+.fresh{display:flex;align-items:center;gap:8px}
+.page-h{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.sub{color:var(--muted);margin-top:4px}
+
+@media (max-width:1023px){
+  .app{display:block}
+  .side{display:none}
+  .topbar{display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--border);padding:6px 8px;min-height:56px}
+  .topbar .t{font-weight:700;font-size:18px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .main{padding:16px 16px calc(96px + var(--safe-b))}
+  .bottombar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--surface);border-top:1px solid var(--border);padding-bottom:var(--safe-b)}
+  .bottombar a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;font-size:12px;font-weight:600;text-decoration:none;color:var(--muted);position:relative}
+  .bottombar a svg{width:24px;height:24px}
+  .bottombar a[aria-current="page"]{color:var(--accent)}
+  .bottombar .badge{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:999px;background:var(--danger);color:#fff;font-size:11px;display:grid;place-items:center;padding:0 5px}
+  body.pushed .bottombar{display:none}
+  body.pushed .main{padding-bottom:calc(120px + var(--safe-b))}
+  h1{font-size:21px}
+  .page-h .fresh{display:none}
+  body:not(.pushed) .page-h h1{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+}
+.back{display:none}
+body.pushed .back{display:inline-flex}
+body.pushed .topbar .refresh{display:none}
+
+/* ---------- attention cards ---------- */
+.qcard{display:flex;flex-direction:column;gap:10px}
+.qcard .top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.qcard .top b{color:var(--text)}
+.user{display:grid;grid-template-columns:72px minmax(0,1fr);gap:10px;align-items:start}
+.thumbbtn{padding:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;width:72px;height:50px;cursor:zoom-in}
+.thumbbtn img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbbtn.none{display:grid;place-items:center;font-size:11px;color:var(--muted);background:var(--surface-2);cursor:default}
+.clamp{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.clamp-3{-webkit-line-clamp:3} .clamp-6{-webkit-line-clamp:6}
+.draftbox{border:2px dashed var(--draft);border-radius:10px;padding:10px 12px;background:var(--draft-soft)}
+.draftbox .lbl{font-size:13px;font-weight:700;color:var(--draft);margin-bottom:4px}
+:root[data-theme="dark"] .draftbox,:root:not([data-theme="light"]) .draftbox{color:var(--text)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.actions .primary{grid-column:1/-1}
+@media (min-width:640px){.actions{grid-template-columns:auto auto auto 1fr}.actions .primary{grid-column:auto}}
+.undo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--ok-soft);border:1px solid var(--ok);color:var(--text);border-radius:var(--radius);padding:12px 16px;position:relative;overflow:hidden}
+.undo .bar{position:absolute;left:0;bottom:0;height:4px;background:var(--ok);animation:drain 10s linear forwards}
+@keyframes drain{from{width:100%}to{width:0}}
+@media (prefers-reduced-motion:reduce){.undo .bar{animation:none;width:100%}}
+.fail{background:var(--danger-soft);border:1px solid var(--danger);border-radius:10px;padding:10px 12px;color:var(--text)}
+.fail b{color:var(--danger)}
+.empty{text-align:center;padding:40px 16px}
+
+/* ---------- lists (reports) ---------- */
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.li{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--border);text-decoration:none;color:inherit;min-height:72px}
+.li:first-child{border-top:0}
+.li:hover{background:var(--surface-2)}
+.li img,.li .th{width:72px;height:50px;border:1px solid var(--border);border-radius:8px;object-fit:cover;background:#fff}
+.li .th{display:grid;place-items:center;font-size:11px;color:var(--muted);background:var(--surface-2);text-align:center}
+.li .t{font-weight:600}
+.li.noimg{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:none}
+@media (max-width:639px){.li{grid-template-columns:72px minmax(0,1fr);grid-template-areas:"i t" "i s"}.li>img,.li>.th{grid-area:i}.li .body{grid-area:t}.li .st{grid-area:s;justify-self:start}
+  .li.noimg{grid-template-columns:1fr;grid-template-areas:"t" "s"}}
+.filters{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-top:12px}
+.filters select{min-height:var(--tap);border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--surface);max-width:100%}
+.filters .chips{margin:0}
+
+/* ---------- thread ---------- */
+.thread{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media (min-width:1024px){.thread{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}.thread .capcol{grid-column:2;grid-row:1 / span 3;position:sticky;top:16px;align-self:start}}
+.th-head{display:flex;flex-direction:column;gap:6px}
+.msg{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;background:var(--surface)}
+.msg.internal{background:var(--internal-soft)}
+.msg.drafted{border:2px dashed var(--draft)}
+.msg header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px;font-size:14px}
+.msg header .who{font-weight:700}
+.av{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--surface-2);font-size:12px;font-weight:700}
+.via{font-size:13px;color:var(--muted)}
+.capcard{padding:0;overflow:hidden}
+.capcard .hero{display:block;width:100%;padding:0;border:0;background:#fff;cursor:zoom-in;border-bottom:1px solid var(--border)}
+.capcard .hero img{display:block;width:100%;height:auto;max-height:220px;object-fit:contain}
+.capcard .in{padding:12px 14px}
+.capbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+@media (min-width:1024px){.capcard.phoneonly{display:none}}
+.cappanel{display:none}
+@media (min-width:1024px){.cappanel{display:block}}
+.statuschip{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--surface);font-weight:700;cursor:pointer}
+.actionbar{position:sticky;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--border);margin:0 -16px;padding:10px 16px calc(10px + var(--safe-b));display:flex;flex-direction:column;gap:8px;box-shadow:0 -6px 16px rgba(0,0,0,.06)}
+.actionbar .lbl{font-size:13px;font-weight:700;color:var(--draft)}
+.actionbar .acts{display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px}
+@media (min-width:1024px){.actionbar{margin:0;border:1px solid var(--border);border-radius:var(--radius)}}
+@media (max-width:359px){.actionbar .acts{grid-template-columns:1fr 1fr}.actionbar .acts .primary{grid-column:1/-1}}
+
+/* capture tabs (side panel and viewer) */
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tabs button{border:0;background:none;padding:10px 12px;min-height:var(--tap);border-bottom:3px solid transparent;cursor:pointer;color:var(--muted);font-weight:700}
+.tabs button[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+.tp{padding:12px 0}
+.tp .shot{display:block;width:100%;height:auto;border:1px solid var(--border);border-radius:8px;background:#fff;touch-action:pinch-zoom}
+.tp .copyframe{display:block;width:100%;height:60vh;max-height:560px;border:1px solid var(--border);border-radius:8px;background:#fff}
+.tp dl{display:grid;grid-template-columns:minmax(0,8.5rem) minmax(0,1fr);gap:8px 12px;margin:0;font-size:15px}
+.tp dt{color:var(--muted)} .tp dd{margin:0;overflow-wrap:anywhere}
+.tp pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px;font-size:13px;margin:8px 0 0}
+.tp pre code{background:none;padding:0}
+@media (max-width:479px){.tp dl{grid-template-columns:1fr}.tp dt{margin-top:6px}}
+
+/* ---------- sheets (dialog): bottom sheet or full screen on a phone, centred on desktop ---------- */
+dialog.sheet{border:0;padding:0;background:var(--surface);color:var(--text);width:min(560px,calc(100% - 32px));max-height:min(86dvh,760px);border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.3);display:none;flex-direction:column}
+dialog.sheet[open]{display:flex}
+dialog.sheet.wide{width:min(980px,calc(100% - 32px))}
+dialog.sheet::backdrop{background:rgba(10,12,16,.55)}
+.sh-h{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 16px;border-bottom:1px solid var(--border);min-height:56px}
+.sh-h h2{flex:1;min-width:0;font-size:18px}
+.sh-b{padding:16px;overflow:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.sh-f{padding:12px 16px calc(12px + var(--safe-b));border-top:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;background:var(--surface)}
+.sh-f .btn{flex:1 1 auto}
+.grab{display:none}
+@media (max-width:639px){
+  dialog.sheet,dialog.sheet.wide{width:100%;max-width:100%;margin:auto 0 0;border-radius:16px 16px 0 0;max-height:92dvh}
+  dialog.sheet.full{height:100dvh;max-height:100dvh;border-radius:0;margin:0}
+  .grab{display:block;width:40px;height:4px;border-radius:2px;background:var(--border);margin:8px auto 0}
+  dialog.sheet.full .grab{display:none}
+  .tabs button{padding:10px 9px}
+  .sh-f{flex-direction:column-reverse}
+  .sh-f .btn{width:100%}
+}
+.quote{border-left:3px solid var(--border);padding:4px 0 4px 10px;color:var(--muted);font-size:15px}
+textarea.big{width:100%;min-height:180px;border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--bg);resize:vertical;font-size:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700}
+.field input[type=text],.field select{min-height:var(--tap);border:1px solid var(--border);border-radius:10px;padding:8px 10px;background:var(--bg);font-size:16px}
+.err{color:var(--danger);font-weight:600;font-size:14px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.seg label{position:relative;display:flex;align-items:center;justify-content:center;min-height:var(--tap);cursor:pointer;font-weight:600}
+.seg input{position:absolute;opacity:0;inset:0;margin:0}
+.seg label:has(input:checked){background:var(--accent-soft);color:var(--accent)}
+.seg label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:-3px}
+.warnline{background:var(--draft-soft);color:var(--text);border-radius:8px;padding:8px 10px;font-size:14px}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px;cursor:pointer;min-height:var(--tap-lg)}
+.opt input{width:22px;height:22px;margin-top:2px;flex:none}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.optlist{display:flex;flex-direction:column;gap:8px;border:0;padding:0;margin:0}
+
+/* settings, more */
+.set{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border)}
+.set:first-of-type{border-top:0}
+@media (max-width:639px){.set{flex-direction:column;align-items:stretch}.set .btn{width:100%}}
+.switch{position:relative;width:52px;height:32px;flex:none}
+.switch input{position:absolute;inset:-6px;opacity:0;margin:0;cursor:pointer;z-index:1;width:auto;height:auto}
+.switch span{position:absolute;inset:0;border-radius:999px;background:var(--border);transition:.15s}
+.switch span::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.15s;box-shadow:var(--shadow)}
+.switch input:checked+span{background:var(--accent)}
+.switch input:checked+span::after{left:23px}
+.switch input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.menu{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.menu a,.menu button{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 16px;border:0;border-top:1px solid var(--border);background:none;text-decoration:none;color:var(--text);font-weight:600;text-align:left;cursor:pointer;width:100%}
+.menu>:first-child{border-top:0}
+.menu .meta{font-weight:400}
+.sec-h{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:20px 4px 8px}
+.callout{border-radius:var(--radius);padding:12px 14px;border:1px solid var(--accent);background:var(--accent-soft)}
+.callout b{display:block}
+
+/* auth pages */
+.auth{min-height:calc(100vh - 34px);display:grid;place-items:center;padding:24px 16px}
+.auth .card{width:100%;max-width:420px;padding:24px;display:flex;flex-direction:column;gap:12px}
+.check{display:flex;gap:12px;align-items:center;min-height:var(--tap-lg);padding:4px 0}
+.check input{width:22px;height:22px;flex:none}
+.stickyfoot{position:sticky;bottom:0;background:var(--surface);padding:12px 0 calc(4px + var(--safe-b));display:flex;gap:8px}
+.stickyfoot .btn{flex:1}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + var(--safe-b));background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;z-index:60;max-width:calc(100% - 32px);display:none}
+@media (min-width:1024px){.toast{bottom:24px}}
+.kbd{display:none}
+@media (min-width:1024px) and (hover:hover){.kbd{display:inline}}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="proto" role="region" aria-label="Prototype controls">
+  <b>PT-2 prototype</b>
+  <label>Screen <select id="pick" aria-label="Screen"></select></label>
+  <button id="theme" type="button">Toggle dark</button>
+  <span>Phone first: try it at 390 px, then 820 and 1280.</span>
+</div>
+
+<!-- ===== auth pages (own origin, no shell) ===== -->
+<section id="v-signin" class="auth" hidden>
+  <div class="card">
+    <div class="brand"><i>A</i> Annotatie</div>
+    <h1>Sign in</h1>
+    <p class="sub">To the Annotatie portal. Invite only.</p>
+    <button class="btn primary lg block" type="button" data-go="attention">Sign in with a passkey</button>
+    <p class="meta">Your phone or computer asks for your fingerprint, face or screen lock.</p>
+    <p><button class="link" type="button" id="recovery-link">Lost your passkey? Use a recovery code</button></p>
+    <div class="field" id="recovery" hidden>
+      <label for="rc">Recovery code</label>
+      <input id="rc" type="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX">
+      <span class="meta">Each code works once. After signing in, add a new passkey under More.</span>
+      <button class="btn block" type="button" data-go="attention">Sign in with the code</button>
+    </div>
+    <p class="meta">No account? Ask an owner for an invite link.</p>
+  </div>
+</section>
+
+<section id="v-consent" class="auth" hidden>
+  <div class="card">
+    <div class="brand"><i>A</i> Annotatie</div>
+    <h1>Allow an agent?</h1>
+    <p class="sub"><b>Claude Code on WORKSTATION-7</b> is asking to act <b>as you</b>. Anything it writes is signed with your name.</p>
+    <fieldset class="optlist"><legend class="h3" style="font-weight:700;margin-bottom:4px">Sites it may use</legend>
+      <label class="check"><input type="checkbox" checked> Race Officials (staging)</label>
+      <label class="check"><input type="checkbox"> Harbour Booking</label>
+    </fieldset>
+    <fieldset class="optlist"><legend style="font-weight:700;margin:8px 0 4px">What it may do</legend>
+      <label class="check"><input type="checkbox" checked disabled> Read reports, threads and decisions (always)</label>
+      <label class="check"><input type="checkbox" checked> Write internal notes and drafts</label>
+      <label class="check"><input type="checkbox" checked> Change statuses</label>
+      <label class="check"><input type="checkbox" checked> Raise decisions for you</label>
+      <label class="check"><input type="checkbox" checked> Open screenshots and page copies</label>
+    </fieldset>
+    <div class="callout"><b>It can't reach your users directly.</b>Its replies to a site's users wait for your approval, unless auto-approve is on for that site.</div>
+    <p class="meta">You can revoke this at any time under More › Agents and tokens.</p>
+    <div class="stickyfoot"><button class="btn lg" type="button">Deny</button><button class="btn primary lg" type="button">Allow</button></div>
+  </div>
+</section>
+
+<!-- ===== shell ===== -->
+<div id="shell" class="app" hidden>
+  <nav class="side" aria-label="Portal">
+    <div class="brand"><i>A</i> Annotatie</div>
+    <div class="nav">
+      <a href="#" data-go="attention"><span>Attention</span><span class="count hot" data-cnt="att">5</span></a>
+      <a href="#" data-go="reports"><span>Reports</span><span class="count">13</span></a>
+      <a href="#" data-go="decisions"><span>Decisions</span><span class="count hot" data-cnt="dec">1</span></a>
+    </div>
+    <div class="nav-h">Sites</div>
+    <div class="nav">
+      <a href="#" data-go="reports" data-site><span>Race Officials</span><span class="count hot">4</span></a>
+      <a href="#" data-go="reports" data-site><span>Harbour Booking</span><span class="count">1</span></a>
+    </div>
+    <div class="nav-h">You</div>
+    <div class="nav">
+      <a href="#" data-go="settings"><span>Settings</span><span></span></a>
+      <a href="#" data-go="agents"><span>Agents and tokens</span><span class="count">2</span></a>
+      <a href="#" data-go="more"><span>More</span><span></span></a>
+    </div>
+    <p class="meta" style="margin-top:auto;padding:8px">Sam Okafor · owner<br><span class="kbd">Press <kbd>?</kbd> for shortcuts</span></p>
+  </nav>
+
+  <div>
+    <header class="topbar">
+      <button class="btn ghost icon back" type="button" id="back" aria-label="Back">
+        <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="t" id="tb-title">Attention</span>
+      <span class="meta refresh" id="tb-fresh">Updated 12:16</span>
+      <button class="btn ghost icon refresh" type="button" aria-label="Refresh" data-refresh>
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg></button>
+    </header>
+    <div class="autobar" id="autobar" role="status"><span class="grow">Auto-approve is on for Race Officials</span><button class="link" type="button" data-autooff>Turn off</button></div>
+
+    <main class="main" id="main">
+
+<!-- Attention -->
+<section id="v-attention" hidden>
+  <div class="page-h"><h1 class="grow">Attention</h1><span class="fresh meta">Updated 12:16 <button class="btn ghost" type="button" data-refresh>Refresh</button></span></div>
+  <p class="sub">Everything waiting for a person, across your sites.</p>
+  <fieldset class="chips" id="qfilter"><legend class="sr">Show</legend>
+    <label><input type="radio" name="qf" value="all" checked>All <span class="count" data-cnt="all">5</span></label>
+    <label><input type="radio" name="qf" value="draft">To approve <span class="count hot" data-cnt="draft">3</span></label>
+    <label><input type="radio" name="qf" value="decision">Decisions <span class="count" data-cnt="decision">1</span></label>
+    <label><input type="radio" name="qf" value="new">New from users <span class="count" data-cnt="new">1</span></label>
+    <label><input type="radio" name="qf" value="unanswered">Unanswered <span class="count" data-cnt="unanswered">0</span></label>
+  </fieldset>
+  <div class="stack" id="queue" aria-live="polite"></div>
+  <div class="card empty" id="queue-empty" hidden><h2>Nothing is waiting for you</h2><p class="meta" style="margin-top:6px">No drafts to approve, no decisions to answer, and every report has a reply.</p></div>
+</section>
+
+<!-- Reports -->
+<section id="v-reports" hidden>
+  <div class="page-h"><h1 class="grow">Reports</h1><span class="fresh meta">Updated 12:16</span></div>
+  <div class="filters">
+    <div class="field"><label for="site">Site</label><select id="site"><option>All sites</option><option>Race Officials</option><option>Harbour Booking</option></select></div>
+    <fieldset class="chips"><legend class="sr">Status</legend>
+      <label><input type="radio" name="rf" checked>Open and active</label>
+      <label><input type="radio" name="rf">Waiting for approval <span class="count hot">3</span></label>
+      <label><input type="radio" name="rf">Resolved</label>
+      <label><input type="radio" name="rf">All</label>
+    </fieldset>
+  </div>
+  <p class="meta" style="margin:12px 0 8px">6 reports, newest first</p>
+  <div class="list" role="list" id="rlist"></div>
+</section>
+
+<!-- Thread (pushed screen) -->
+<section id="v-thread" hidden>
+  <div class="thread">
+    <div class="th-head">
+      <div class="row"><span class="meta">Race Officials · Report 41</span><span class="grow"></span>
+        <button class="statuschip" type="button" id="statusbtn" aria-haspopup="dialog"><span class="tag t-open" id="statustag">Open</span><span class="sr">Change status</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button></div>
+      <h1>“Expiring” filter shows people who already lapsed</h1>
+      <p class="meta">Bug · <code>/register</code> · button “Expiring” · Ada Example · 12 min ago</p>
+    </div>
+
+    <aside class="capcol">
+      <div class="card capcard phoneonly">
+        <button class="hero" type="button" data-viewer="shot" aria-label="Open the screenshot full screen"><img data-shot="marked" alt=""></button>
+        <div class="in"><h2>Page when reported</h2><p class="meta">390 × 844 · Chrome on Android · 12:04 UTC</p>
+          <div class="capbtns">
+            <button class="btn" type="button" data-viewer="shot">Screenshot</button>
+            <button class="btn" type="button" data-viewer="copy">Page copy</button>
+            <button class="btn" type="button" data-viewer="part">Part</button>
+            <button class="btn" type="button" data-viewer="det">Details</button>
+          </div></div>
+      </div>
+      <div class="card cappanel" id="cappanel"><h2 style="margin-bottom:6px">Page when reported</h2><div data-captabs="panel"></div></div>
+    </aside>
+
+    <div class="stack" id="msgs">
+      <article class="msg"><header><span class="av" aria-hidden="true">AE</span><span class="who">Ada Example</span><span class="tag t-client">User</span><span class="meta">12:04</span></header>
+        When I pick Expiring in the filter I also get two people whose accreditation ended last month.</article>
+      <article class="msg internal"><header><span class="av" aria-hidden="true">SO</span><span class="who">Sam Okafor</span><span class="tag t-internal">Internal note</span><span class="meta">12:09</span></header>
+        <p class="via" style="margin:-4px 0 6px">via Claude Code on WORKSTATION-7</p>
+        Reproduced from the page copy. <code>expiringScope()</code> uses the start of the month. Fixed in commit 4be1c0a and deployed to staging at 12:14.</article>
+      <article class="msg drafted" id="tdraft"><header><span class="av" aria-hidden="true">SO</span><span class="who">Sam Okafor</span><span class="tag t-draft" id="tdraft-tag">Draft · the user can't see it yet</span><span class="meta">12:15</span></header>
+        <p class="via" style="margin:-4px 0 6px">via Claude Code on WORKSTATION-7</p>
+        <div id="tdraft-text">Thanks, Ada. You're right: the filter counted from the start of the month rather than today. That's fixed on staging now, so the list should show only people whose accreditation ends in the next 90 days. Let me know if you still see anyone who has lapsed.</div></article>
+    </div>
+
+    <div class="actionbar" id="actionbar"></div>
+  </div>
+</section>
+
+<!-- Decisions list -->
+<section id="v-decisions" hidden>
+  <div class="page-h"><h1 class="grow">Decisions</h1></div>
+  <p class="sub">Questions agents raised for you. Answering records your choice; the agent reads it.</p>
+  <div class="list" role="list" style="margin-top:16px">
+    <a class="li noimg" role="listitem" href="#" data-go="decision"><span class="body"><span class="t">Should the register export include nationality for every role?</span><br><span class="meta">Race Officials · Decision 3 · linked to Report 44 · 30 min ago</span></span><span class="st"><span class="tag t-open">Waiting for you</span></span></a>
+    <a class="li noimg" role="listitem" href="#"><span class="body"><span class="t">Keep the old booking reference format?</span><br><span class="meta">Harbour Booking · Decision 1 · answered B by Sam Okafor · 2 Nov</span></span><span class="st"><span class="tag t-resolved">Answered</span></span></a>
+  </div>
+</section>
+
+<!-- Decision (pushed) -->
+<section id="v-decision" hidden>
+  <p class="meta">Race Officials · Decision 3 · internal · raised via Claude Code · linked to <a href="#" data-go="thread">Report 44</a></p>
+  <h1 style="margin:6px 0 8px">Should the register export include nationality for every role?</h1>
+  <p class="sub">Ben asked for nationality in the export. Viewers can already see it on screen.</p>
+  <fieldset class="optlist" style="margin:16px 0"><legend class="sr">Options</legend>
+    <label class="opt"><input type="radio" name="d3" value="A" checked><span><b>A. Yes, for everyone who can export</b> <span class="tag t-client">Recommended</span><br><span class="meta">Matches what is on screen; no new permission. One small change.</span></span></label>
+    <label class="opt"><input type="radio" name="d3" value="B"><span><b>B. Only for staff with “export personal data”</b><br><span class="meta">Needs a new permission and a test, plus a reply to Ben explaining why.</span></span></label>
+    <label class="opt"><input type="radio" name="d3" value="C"><span><b>C. No</b><br><span class="meta">Ben keeps filtering by hand.</span></span></label>
+  </fieldset>
+  <div class="field"><label for="dn">Note for the agent (optional)</label><input id="dn" type="text"></div>
+  <div class="actionbar" style="margin-top:16px"><button class="btn primary lg block" type="button" id="answer">Record answer</button></div>
+</section>
+
+<!-- More -->
+<section id="v-more" hidden>
+  <h1>More</h1>
+  <h2 class="sec-h">Sites</h2>
+  <div class="menu">
+    <a href="#" data-go="reports"><span>Race Officials<br><span class="meta">4 need attention · 12 reports</span></span><span class="count hot">4</span></a>
+    <a href="#" data-go="reports"><span>Harbour Booking<br><span class="meta">1 needs attention · 1 report</span></span><span class="count">1</span></a>
+  </div>
+  <h2 class="sec-h">This phone</h2>
+  <div class="card stack" id="push-card">
+    <div class="set" style="border:0;padding:0"><div><b>Notifications on this phone</b><br><span class="meta" id="pushdesc">Off. Turn on to hear when a draft or a decision is waiting.</span></div><div class="switch"><input type="checkbox" role="switch" id="push" aria-label="Notifications on this phone"><span></span></div></div>
+    <p class="meta">On an iPhone, add the portal to your home screen first: Share › Add to Home Screen. (M1, approved 6 Nov 2026.)</p>
+    <div class="field" id="quiet" hidden><label for="qh">Quiet hours</label><select id="qh"><option>None</option><option selected>22:00 to 07:00</option><option>20:00 to 08:00</option></select></div>
+  </div>
+  <h2 class="sec-h">Desk work</h2>
+  <div class="menu">
+    <a href="#" data-go="settings"><span>Site settings</span><span aria-hidden="true">›</span></a>
+    <a href="#" data-go="agents"><span>Agents and tokens<br><span class="meta">1 agent, 1 token</span></span><span aria-hidden="true">›</span></a>
+    <a href="#"><span>Passkeys and recovery codes</span><span aria-hidden="true">›</span></a>
+    <a href="#" data-go="signin"><span>Sign out<br><span class="meta">Sam Okafor · owner</span></span><span></span></a>
+  </div>
+</section>
+
+<!-- Settings -->
+<section id="v-settings" hidden>
+  <p class="meta">Race Officials</p>
+  <h1>Site settings</h1>
+  <p class="sub">Owners only.</p>
+  <div class="card" style="margin-top:16px">
+    <h2>Replies from agents</h2>
+    <div class="set"><div><b>Auto-approve agent replies</b><br><span class="meta" id="autodesc">Off: every reply an agent writes for a user waits as a draft until a person approves it.</span></div>
+      <div class="switch"><input type="checkbox" role="switch" id="auto" aria-label="Auto-approve agent replies"><span></span></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Install</h2>
+    <div class="set"><div><b>Allowed origins</b><br><span class="meta"><code>https://officials-staging.example.org</code></span></div><button class="btn" type="button">Edit</button></div>
+    <div class="set"><div><b>Site keys</b><br><span class="meta">Key <code>k-2026-11</code> · active · last used 3 min ago</span></div><button class="btn" type="button">Add key</button></div>
+    <div class="set"><div><b>Captures</b><br><span class="meta">Deleted 90 days after a report is resolved · privacy mode off</span></div><button class="btn" type="button">Change</button></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Members</h2>
+    <div class="set"><div><b>Sam Okafor</b><br><span class="meta">Owner</span></div></div>
+    <div class="set"><div><b>Jo Fixture</b><br><span class="meta">Member</span></div><button class="btn" type="button">Change</button></div>
+    <div class="set"><div><b>Invite someone</b><br><span class="meta">A one-time link, valid for 72 hours, for you to send yourself.</span></div><button class="btn" type="button">Make link</button></div>
+  </div>
+</section>
+
+<!-- Agents -->
+<section id="v-agents" hidden>
+  <h1>Agents and tokens</h1>
+  <p class="sub">Everything that can act as you. Revoking takes effect within 15 minutes, or at once for tokens.</p>
+  <h2 class="sec-h">Connected agents</h2>
+  <div class="card"><div class="set" style="border:0;padding:0"><div><b>Claude Code on WORKSTATION-7</b><br><span class="meta">Race Officials · notes, drafts, statuses, decisions, captures · last used 3 min ago</span></div><button class="btn danger" type="button">Revoke</button></div></div>
+  <h2 class="sec-h">Personal access tokens</h2>
+  <div class="card"><div class="set" style="border:0;padding:0"><div><b>nightly-triage</b><br><span class="meta">Harbour Booking · read, notes · expires 5 Feb 2027 · last used yesterday</span></div><button class="btn danger" type="button">Revoke</button></div></div>
+  <p style="margin-top:12px"><button class="btn primary" type="button">Make a token</button></p>
+</section>
+
+    </main>
+    <nav class="bottombar" aria-label="Portal">
+      <a href="#" data-go="attention"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 13h4l2 3h4l2-3h4M5 5h14l1 8v6H4v-6z"/></svg>Attention<span class="badge" data-cnt="att">5</span></a>
+      <a href="#" data-go="reports"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Reports</a>
+      <a href="#" data-go="decisions"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5zM3 13l9 5 9-5"/></svg>Decisions<span class="badge" data-cnt="dec">1</span></a>
+      <a href="#" data-go="more"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>More</a>
+    </nav>
+  </div>
+</div>
+
+<!-- ===== sheets ===== -->
+<dialog class="sheet full" id="sh-edit" aria-labelledby="sh-edit-h">
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sh-h"><h2 id="sh-edit-h" tabindex="-1">Edit the reply</h2><button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button></div>
+  <div class="sh-b">
+    <p class="meta" id="edit-ctx">Race Officials · Report 41 · to Ada Example</p>
+    <div class="quote" id="edit-quote"></div>
+    <div class="field"><label for="edit-ta">Your reply, sent as Sam Okafor</label><textarea class="big" id="edit-ta"></textarea></div>
+  </div>
+  <div class="sh-f"><button class="btn lg" type="button" data-close>Cancel</button><button class="btn primary lg" type="button" id="edit-send">Approve and send</button></div>
+</dialog>
+
+<dialog class="sheet" id="sh-reject" aria-labelledby="sh-rej-h">
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sh-h"><h2 id="sh-rej-h" tabindex="-1">Reject this draft?</h2><button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button></div>
+  <div class="sh-b">
+    <p>The user never sees it. It stays in the thread as a rejected note, and the agent reads why.</p>
+    <p class="err" id="rej-err" hidden>Choose a reason or write a note</p>
+    <fieldset class="chips" style="margin:0"><legend style="font-weight:700;margin-bottom:6px">Why</legend>
+      <label><input type="checkbox" name="why" value="Wrong facts">Wrong facts</label>
+      <label><input type="checkbox" name="why" value="Wrong tone">Wrong tone</label>
+      <label><input type="checkbox" name="why" value="Don't promise a date">Don't promise a date</label>
+      <label><input type="checkbox" name="why" value="Needs a person">Needs a person</label>
+    </fieldset>
+    <div class="field"><label for="rej-note">Note for the agent</label><span class="meta">Choose a reason, write a note, or both.</span><input id="rej-note" type="text"></div>
+  </div>
+  <div class="sh-f"><button class="btn lg" type="button" data-close>Cancel</button><button class="btn danger lg" type="button" id="rej-ok">Reject draft</button></div>
+</dialog>
+
+<dialog class="sheet" id="sh-status" aria-labelledby="sh-st-h">
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sh-h"><h2 id="sh-st-h" tabindex="-1">Status of Report 41</h2><button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button></div>
+  <div class="sh-b"><fieldset class="optlist"><legend class="sr">Status</legend></fieldset></div>
+  <div class="sh-f"><button class="btn lg" type="button" data-close>Cancel</button><button class="btn primary lg" type="button" id="st-save">Save</button></div>
+</dialog>
+
+<dialog class="sheet full" id="sh-compose" aria-labelledby="sh-cmp-h">
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sh-h"><h2 id="sh-cmp-h" tabindex="-1">Write on Report 41</h2><button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button></div>
+  <div class="sh-b">
+    <fieldset style="border:0;padding:0;margin:0"><legend class="sr">Who sees it</legend>
+      <div class="seg"><label><input type="radio" name="vis" value="note" checked>Internal note</label><label><input type="radio" name="vis" value="reply">Reply to the user</label></div></fieldset>
+    <p class="warnline" id="cmp-warn" hidden>Ada Example will see this, signed as you.</p>
+    <div class="field"><label for="cmp-ta">Message</label><textarea class="big" id="cmp-ta" placeholder="Only people on the portal see an internal note."></textarea></div>
+  </div>
+  <div class="sh-f"><button class="btn lg" type="button" data-close>Cancel</button><button class="btn primary lg" type="button" id="cmp-post">Post note</button></div>
+</dialog>
+
+<dialog class="sheet full wide" id="sh-viewer" aria-labelledby="sh-vw-h">
+  <div class="sh-h"><button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button><h2 id="sh-vw-h" tabindex="-1">Page when reported</h2></div>
+  <div class="sh-b" style="padding-top:0"><div data-captabs="viewer"></div></div>
+</dialog>
+
+<dialog class="sheet" id="sh-auto" aria-labelledby="sh-auto-h">
+  <span class="grab" aria-hidden="true"></span>
+  <div class="sh-h"><h2 id="sh-auto-h" tabindex="-1">Turn on auto-approve for Race Officials?</h2></div>
+  <div class="sh-b"><p>Replies agents write for this site's users will be sent <b>straight away, without anyone checking them</b>, signed with the name of whoever connected the agent.</p>
+    <p class="meta">Internal notes, statuses and decisions are unaffected. The drafts already waiting stay drafts.</p></div>
+  <div class="sh-f"><button class="btn lg" type="button" data-close>Keep it off</button><button class="btn danger lg" type="button" id="auto-ok">Turn on auto-approve</button></div>
+</dialog>
+
+<dialog class="sheet" id="sh-discard" aria-labelledby="sh-dis-h">
+  <div class="sh-h"><h2 id="sh-dis-h" tabindex="-1">Discard your edit?</h2></div>
+  <div class="sh-b"><p>Your changes to the reply will be lost. The agent's draft stays as it was.</p></div>
+  <div class="sh-f"><button class="btn lg" type="button" id="dis-keep">Keep editing</button><button class="btn danger lg" type="button" id="dis-ok">Discard</button></div>
+</dialog>
+
+<dialog class="sheet" id="sh-keys" aria-labelledby="sh-keys-h">
+  <div class="sh-h"><h2 id="sh-keys-h" tabindex="-1">Keyboard shortcuts</h2><button class="btn ghost icon" type="button" data-close aria-label="Close">✕</button></div>
+  <div class="sh-b"><p><kbd>j</kbd> / <kbd>k</kbd> next / previous card · <kbd>a</kbd> approve · <kbd>e</kbd> edit · <kbd>r</kbd> reject · <kbd>?</kbd> this list</p></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const SCREENS=[['signin','Sign in (passkey only)'],['consent','Agent consent'],['attention','Attention: the queue'],['attention-fail','Attention: approval failed (no connection)'],['attention-empty','Attention: nothing waiting'],
+    ['reports','Reports (all sites)'],['thread','Report 41 with a draft'],['thread-sent','Report 41, draft sent'],['decisions','Decisions'],['decision','Decision 3'],['more','More (sites, this phone)'],['settings','Site settings'],['agents','Agents and tokens']];
+  const pick=$('#pick'); SCREENS.forEach(([v,t])=>pick.add(new Option(t,v))); pick.value='attention';
+  const TITLES={attention:'Attention',reports:'Reports',thread:'Report 41',decisions:'Decisions',decision:'Decision 3',more:'More',settings:'Site settings',agents:'Agents and tokens'};
+  const PUSHED={thread:'reports',decision:'decisions',settings:'more',agents:'more'};
+
+  function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',3200)}
+
+  // ---- synthetic screenshot (SVG) and page copy, as in PT-1
+  const ROWS=[['Ada Example','IJ · ends 30 Nov'],['Fin Sample','IU · ended 14 Oct'],['Gus Fixture','NRO · ended 2 Oct'],['Hana Mock','IJ · ends 12 Jan']];
+  function shot(marked,crop,variant){
+    const W=390,H=380,chips=['All','Current','Expiring','Lapsed']; let cx=16,cs='',t;
+    chips.forEach(c=>{const w=c.length*8+26,on=c==='Expiring';cs+=`<rect x="${cx}" y="116" width="${w}" height="28" rx="14" fill="${on?'#ecf4ff':'#fff'}" stroke="${on?'#0d2c6c':'#c5ccd6'}"/><text x="${cx+13}" y="135" font-size="13" font-weight="${on?600:400}" fill="#1c2735">${c}</text>`;if(on)t={x:cx,y:116,w:w,h:28};cx+=w+8});
+    if(variant==='export'){t={x:270,y:60,w:90,h:32}}
+    let ry=160,rs='';ROWS.forEach(r=>{rs+=`<rect x="16" y="${ry}" width="358" height="44" fill="#fff" stroke="#d9e8fb"/><text x="30" y="${ry+27}" font-size="14" fill="#1c2735">${r[0]}</text><text x="360" y="${ry+27}" font-size="14" fill="#354150" text-anchor="end">${r[1]}</text>`;ry+=44});
+    const exp=`<rect x="270" y="60" width="90" height="32" rx="8" fill="#0d2c6c"/><text x="315" y="81" font-size="13" font-weight="600" fill="#fff" text-anchor="middle">Export</text>`;
+    const mk=marked?`<rect x="${t.x-4}" y="${t.y-4}" width="${t.w+8}" height="${t.h+8}" rx="14" fill="none" stroke="#b42318" stroke-width="3"/>`:'';
+    const vb=crop?`${t.x-48} ${t.y-30} ${t.w+96} ${t.h+60}`:`0 0 ${W} ${H}`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" font-family="Segoe UI, Arial, sans-serif"><rect width="${W}" height="${H}" fill="#f7faff"/><rect width="${W}" height="48" fill="#0b3d63"/><text x="16" y="30" font-size="15" font-weight="600" fill="#fff">Race Officials</text><text x="16" y="88" font-size="22" font-weight="600" fill="#1c2735">Officials register</text>${exp}${cs}${rs}${mk}</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  }
+  const COPY=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=390"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>body{margin:0;font:14px/20px system-ui,Segoe UI,Arial,sans-serif;background:#f7faff;color:#1c2735}header{height:48px;background:#0b3d63;color:#fff;display:flex;align-items:center;padding:0 16px;font-weight:600}main{padding:16px}h1{font-size:22px;margin:0 0 12px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.chip{border:1px solid #c5ccd6;border-radius:14px;padding:4px 12px;background:#fff}.chip[aria-pressed=true]{background:#ecf4ff;border-color:#0d2c6c;font-weight:600}.rows{background:#fff;border:1px solid #d9e8fb;border-radius:8px}.r{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #d9e8fb;gap:12px}[data-annotatie-target]{outline:3px solid #b42318;outline-offset:2px}input{min-height:36px;width:100%;box-sizing:border-box;background:repeating-linear-gradient(45deg,#eee 0 6px,#fff 6px 12px)}</style></head><body><header>Race Officials</header><main><h1>Officials register</h1><p><input type="text" value="" aria-label="Search (left blank)"></p><div class="chips"><span class="chip">All</span><span class="chip">Current</span><span class="chip" aria-pressed="true" data-annotatie-target>Expiring</span><span class="chip">Lapsed</span></div><div class="rows">${ROWS.map(r=>`<div class="r"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div></main></body></html>`;
+
+  function capTabs(host,tab,uid){
+    const T=[['shot','Screenshot'],['copy','Page copy'],['part','Part'],['det','Details']];
+    const body={
+      shot:`<figure style="margin:0"><img class="shot" alt="Screenshot of /register as Ada Example saw it, with the Expiring filter outlined as report 41." src="${shot(true,false)}"></figure><p class="meta" style="margin-top:8px">390 × 844 at 3× · Chrome 131 on Android · 2 Nov 2026 at 12:04 UTC · drawn by the browser: videos, maps and pictures from other sites may be missing. Pinch to zoom.</p>`,
+      copy:`<iframe class="copyframe" sandbox="" title="Copy of the page /register when report 41 was sent"></iframe><p class="row" style="margin-top:8px"><button class="link" type="button" data-noop>Open the live page</button><button class="link" type="button" data-noop>Download HTML</button></p><p class="meta">Copy of the page's HTML · 180 KB · scripts removed, links do nothing · 2 fields left blank.</p>`,
+      part:`<dl><dt>Readable anchor</dt><dd>button “Expiring”</dd><dt>Selector</dt><dd><code>main [data-filter="expiring"]</code></dd><dt>Role and name</dt><dd>button, “Expiring”, pressed</dd><dt>Box</dt><dd>x 104, y 116, 92 × 28 on the screenshot</dd><dt>Text</dt><dd>Expiring</dd><dt>Styles</dt><dd>inline-flex · #1c2735 on #ecf4ff · 13 px</dd><dt>Inside</dt><dd><code>main › section.filters › div.chips</code></dd></dl><h3 style="margin-top:12px">HTML of the part</h3><pre><code>&lt;button type="button" class="chip on" data-filter="expiring" aria-pressed="true" wire:click="setFilter('expiring')"&gt;Expiring&lt;/button&gt;</code></pre><p style="margin-top:8px"><button class="btn" type="button" data-copyhtml>Copy the HTML</button></p>`,
+      det:`<dl><dt>Page</dt><dd><code>/register?filter=expiring</code></dd><dt>Route</dt><dd><code>register.index</code> · “Officials register”</dd><dt>Build</dt><dd><code>4b91e2d</code></dd><dt>Screen</dt><dd>390 × 844 at 3×, scrolled 0 px</dd><dt>Browser</dt><dd>Chrome 131 on Android 15</dd><dt>Screenshot</dt><dd>Drawn by the browser · 212 KB</dd><dt>Page copy</dt><dd>180 KB (41 KB gzipped) · 2 fields left blank</dd><dt>Captured</dt><dd>2 Nov 2026 at 12:04:31 UTC</dd></dl>`
+    };
+    host.innerHTML=`<div class="tabs" role="tablist" aria-label="Page when reported">${T.map(([k,l])=>`<button type="button" role="tab" id="${uid}-t-${k}" aria-controls="${uid}-p" aria-selected="${k===tab}" tabindex="${k===tab?0:-1}" data-k="${k}">${l}</button>`).join('')}</div><div class="tp" role="tabpanel" id="${uid}-p" aria-labelledby="${uid}-t-${tab}">${body[tab]}</div>`;
+    const f=host.querySelector('iframe'); if(f) f.srcdoc=COPY;
+    const tl=host.querySelector('[role=tablist]');
+    tl.onclick=e=>{const b=e.target.closest('[role=tab]'); if(b){capTabs(host,b.dataset.k,uid); host.querySelector('[aria-selected=true]').focus()}};
+    tl.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return; e.preventDefault(); const ks=T.map(x=>x[0]); let i=ks.indexOf(tab);
+      i=e.key==='Home'?0:e.key==='End'?ks.length-1:(i+(e.key==='ArrowRight'?1:ks.length-1))%ks.length; capTabs(host,ks[i],uid); host.querySelector('[aria-selected=true]').focus()};
+  }
+
+  // ---- the queue
+  let Q=[
+    {id:'q41',kind:'draft',site:'Race Officials',ref:'Report 41',age:'12 min ago',title:'“Expiring” filter shows people who already lapsed',who:'Ada Example',type:'Bug',page:'/register',
+      msg:'When I pick Expiring in the filter I also get two people whose accreditation ended last month.',
+      draft:"Thanks, Ada. You're right: the filter counted from the start of the month rather than today. That's fixed on staging now, so the list should show only people whose accreditation ends in the next 90 days. Let me know if you still see anyone who has lapsed.",thumb:'chip'},
+    {id:'q44',kind:'draft',site:'Race Officials',ref:'Report 44',age:'40 min ago',title:'Can the export include nationality?',who:'Ben Sample',type:'Feature',page:'/register',
+      msg:'Could Export also include the nationality column? We filter on it afterwards, and at the moment I have to copy it across by hand from the profile pages, which takes most of a morning each month when the list is long.',
+      draft:"Good idea, Ben. We'll add nationality to the export and reply here when it's on staging.",thumb:'export'},
+    {id:'d3',kind:'decision',site:'Race Officials',ref:'Decision 3',age:'30 min ago',title:'Should the register export include nationality for every role?',msg:'Raised by Claude Code from Report 44. Three options; A is recommended.'},
+    {id:'q7',kind:'draft',site:'Harbour Booking',ref:'Report 7',age:'2 h ago',title:'Which date format should bookings use?',who:'Chloe Demo',type:'Question',page:'/bookings/new',
+      msg:'Should we type dates as 05/11 or 11/05?',draft:'Day first: 05/11/2026 is 5 November. The calendar picker fills it in for you as well.',thumb:'none'},
+    {id:'n12',kind:'new',site:'Harbour Booking',ref:'Report 8',age:'5 min ago',title:'Whole page: the map takes a long time to load',who:'Chloe Demo',type:'Bug',page:'/marina',msg:'Every morning the marina map takes ten seconds or more before I can click a berth.',thumb:'none'}
+  ];
+  const Q0=JSON.parse(JSON.stringify(Q));
+  let filter='all', failId=null, cur=0;
+  const timers={};
+  function thumbHTML(it){
+    if(it.thumb==='none'||!it.thumb) return `<span class="thumbbtn none" aria-hidden="true">Whole page</span>`;
+    return `<button class="thumbbtn" type="button" data-viewer="shot" aria-label="Open the screenshot sent with ${esc(it.ref)}"><img alt="" src="${shot(true,true,it.thumb==='export'?'export':'')}"></button>`;
+  }
+  function card(it){
+    if(it.undo) return `<div class="undo" data-id="${it.id}" role="status"><span class="grow">Sent to ${esc(it.who)}</span><button class="btn" type="button" data-undo="${it.id}">Undo</button><span class="bar" aria-hidden="true"></span></div>`;
+    if(it.kind==='decision') return `<article class="card qcard" data-id="${it.id}" tabindex="-1"><div class="top"><b>${esc(it.site)} · ${esc(it.ref)}</b><span class="tag t-open">Decision waiting</span><span class="grow"></span><span>${esc(it.age)}</span></div><h2>${esc(it.title)}</h2><p class="meta">${esc(it.msg)}</p><div class="actions"><button class="btn primary lg" type="button" data-go="decision">Answer</button></div></article>`;
+    const head=`<div class="top"><b>${esc(it.site)} · ${esc(it.ref)}</b>${it.kind==='draft'?'<span class="tag t-draft">Draft waiting</span>':'<span class="tag t-open">New, no reply yet</span>'}<span class="grow"></span><span>${esc(it.age)}</span></div>
+      <h2><a href="#" data-go="thread" style="color:inherit;text-decoration:none">${esc(it.title)}</a></h2>
+      <div class="user">${thumbHTML(it)}<div><p class="meta"><b style="color:var(--text)">${esc(it.who)}</b> · ${esc(it.type)} · <code>${esc(it.page)}</code></p><p class="clamp clamp-3" data-clamp>${esc(it.msg)}</p><button class="link" type="button" data-more hidden>More</button></div></div>`;
+    if(it.kind==='new') return `<article class="card qcard" data-id="${it.id}" tabindex="-1">${head}<div class="actions"><button class="btn primary lg" type="button" data-go="thread">Open and reply</button></div></article>`;
+    const fail=failId===it.id?`<div class="fail" role="alert"><b>Not sent: no connection.</b> Your reply is kept. <button class="link" type="button" data-approve="${it.id}">Try again</button></div>`:'';
+    return `<article class="card qcard" data-id="${it.id}" tabindex="-1">${head}
+      <div class="draftbox"><p class="lbl">Agent's reply, to send as Sam Okafor</p><p>${esc(it.draft)}</p></div>${fail}
+      <div class="actions"><button class="btn primary lg" type="button" data-approve="${it.id}">Approve and send</button><button class="btn lg" type="button" data-edit="${it.id}">Edit</button><button class="btn danger lg" type="button" data-reject="${it.id}">Reject</button></div></article>`;
+  }
+  function counts(){
+    const live=Q.filter(x=>!x.undo);
+    const c={all:live.length,draft:live.filter(x=>x.kind==='draft').length,decision:live.filter(x=>x.kind==='decision').length,new:live.filter(x=>x.kind==='new').length,unanswered:0};
+    $$('[data-cnt]').forEach(e=>{const k=e.dataset.cnt; const v=k==='att'?c.all:k==='dec'?c.decision:c[k]; e.textContent=v; if(e.classList.contains('badge')) e.hidden=!v;});
+  }
+  function renderQueue(){
+    const order={draft:0,decision:1,new:2};
+    const items=Q.filter(x=>filter==='all'||x.kind===filter||(x.undo&&filter==='draft')).sort((a,b)=>(order[a.kind]-order[b.kind]));
+    $('#queue').innerHTML=items.map(card).join('');
+    $('#queue-empty').hidden=items.length>0;
+    checkClamps();
+    counts();
+  }
+  function checkClamps(){$$('#queue [data-clamp]').forEach(p=>{const b=p.nextElementSibling; if(b&&b.matches('[data-more]')&&p.classList.contains('clamp-3')) b.hidden=p.scrollHeight<=p.clientHeight+1})}
+  addEventListener('resize',()=>{clearTimeout(checkClamps._t); checkClamps._t=setTimeout(checkClamps,150)});
+  function findQ(id){return Q.find(x=>x.id===id)}
+  function approve(id,text){
+    const it=findQ(id); if(!it) return;
+    if(text) it.draft=text;
+    failId=null; it.undo=true; renderQueue();
+    timers[id]=setTimeout(()=>{Q=Q.filter(x=>x.id!==id); renderQueue(); if(!Q.length) toast('Nothing more is waiting')},10000);
+  }
+  $('#qfilter').addEventListener('change',e=>{filter=e.target.value; renderQueue()});
+
+  // ---- reports list
+  const RL=[['41','“Expiring” filter shows people who already lapsed','Race Officials · Bug · Ada Example · 12 min','t-draft','Draft waiting','chip'],
+    ['44','Can the export include nationality?','Race Officials · Feature · Ben Sample · 40 min','t-draft','Draft waiting','export'],
+    ['8','Whole page: the map takes a long time to load','Harbour Booking · Bug · Chloe Demo · 5 min','t-open','Open',null],
+    ['39','Save button hidden under the keyboard on phone','Race Officials · Bug · Dana Test · yesterday','t-progress','In progress','chip'],
+    ['7','Which date format should bookings use?','Harbour Booking · Question · Chloe Demo · 2 h','t-draft','Draft waiting',null],
+    ['37','What does “pending reference” mean?','Race Officials · Question · Eve Placeholder · 2 days','t-answered','Answered','chip']];
+  $('#rlist').innerHTML=RL.map(r=>`<a class="li" role="listitem" href="#" data-go="thread">${r[5]?`<img alt="" src="${shot(true,true,r[5]==='export'?'export':'')}">`:'<span class="th" aria-hidden="true">Whole page</span>'}<span class="body"><span class="t">${esc(r[1])}</span><br><span class="meta">${r[0]} · ${esc(r[2])}</span></span><span class="st"><span class="tag ${r[3]}">${r[4]}</span></span></a>`).join('');
+
+  // ---- thread
+  let tState='draft';
+  function renderThread(){
+    const bar=$('#actionbar');
+    if(tState==='draft'){
+      bar.innerHTML=`<p class="lbl">Draft waiting: the user can't see it yet</p><div class="acts"><button class="btn primary lg" type="button" data-approve="t41">Approve and send</button><button class="btn lg" type="button" data-edit="t41">Edit</button><button class="btn danger lg" type="button" data-reject="t41">Reject</button></div>`;
+      $('#tdraft').className='msg drafted'; $('#tdraft-tag').className='tag t-draft'; $('#tdraft-tag').textContent="Draft · the user can't see it yet";
+    } else if(tState==='undo'){
+      bar.innerHTML=`<div class="undo" role="status" style="margin:0"><span class="grow">Sent to Ada Example</span><button class="btn" type="button" data-undo="t41">Undo</button><span class="bar" aria-hidden="true"></span></div>`;
+    } else {
+      $('#tdraft').className='msg'; $('#tdraft-tag').className='tag t-client'; $('#tdraft-tag').textContent='Sent to user';
+      bar.innerHTML=`<button class="btn lg block" type="button" data-compose>Write a note or reply</button>`;
+    }
+    $$('img[data-shot]').forEach(i=>i.src=shot(true,false));
+  }
+  capTabs($('[data-captabs="panel"]'),'shot','pn');
+
+  // ---- status sheet
+  const ST=[['Open','t-open'],['Answered','t-answered'],['In progress','t-progress'],['Waiting on us','t-progress'],['Waiting on user','t-answered'],['Resolved','t-resolved']];
+  $('#sh-status fieldset').innerHTML='<legend class="sr">Status</legend>'+ST.map(([s],i)=>`<label class="opt"><input type="radio" name="st" value="${i}"${i===0?' checked':''}><span>${s}</span></label>`).join('');
+  $('#st-save').onclick=()=>{const i=+$('#sh-status input:checked').value; const t=$('#statustag'); t.className='tag '+ST[i][1]; t.textContent=ST[i][0]; close('#sh-status'); toast('Status: '+ST[i][0])};
+
+  // ---- sheets
+  let opener=null;
+  function open(sel){opener=document.activeElement; const d=$(sel); d.showModal(); const h=d.querySelector('h2'); if(h) h.focus();}
+  function close(sel){const d=$(sel); if(d.open) d.close(); if(opener&&opener.isConnected) opener.focus();}
+  $$('dialog.sheet').forEach(d=>{d.addEventListener('click',e=>{if(e.target===d) tryClose(d)}); d.addEventListener('cancel',e=>{e.preventDefault(); tryClose(d)})});
+  let editId=null, editOrig='';
+  function tryClose(d){ if(d.id==='sh-edit'&&$('#edit-ta').value!==editOrig){ $('#sh-discard').showModal(); return } close('#'+d.id) }
+  $('#dis-keep').onclick=()=>{$('#sh-discard').close(); $('#edit-ta').focus()};
+  $('#dis-ok').onclick=()=>{$('#sh-discard').close(); close('#sh-edit'); toast('Edit discarded. The draft is unchanged.')};
+
+  function startEdit(id){
+    editId=id; const it=id==='t41'?{who:'Ada Example',ref:'Report 41',site:'Race Officials',msg:Q[0].msg,draft:$('#tdraft-text').textContent}:findQ(id);
+    $('#edit-ctx').textContent=`${it.site} · ${it.ref} · to ${it.who}`; $('#edit-quote').textContent=`${it.who}: ${it.msg}`;
+    $('#edit-ta').value=it.draft; editOrig=it.draft; open('#sh-edit');
+  }
+  $('#edit-send').onclick=()=>{const v=$('#edit-ta').value.trim(); if(!v){toast('The reply is empty');return} $('#sh-edit').close(); if(editId==='t41'){ $('#tdraft-text').textContent=v; tState='undo'; renderThread(); startThreadUndo(); } else approve(editId,v); toast('Sending your edited reply')};
+
+  let rejId=null;
+  $('#rej-ok').onclick=()=>{const why=$$('#sh-reject input[name=why]:checked').map(x=>x.value); const note=$('#rej-note').value.trim();
+    if(!why.length&&!note){$('#rej-err').hidden=false; $('#rej-err').focus&&$('#rej-err').setAttribute('tabindex','-1'); $('#rej-err').focus(); return}
+    close('#sh-reject'); if(rejId==='t41'){ $('#tdraft').className='msg internal'; $('#tdraft-tag').className='tag t-internal'; $('#tdraft-tag').textContent='Rejected · '+(why.join(', ')||'note'); tState='done'; renderThread(); }
+    else {Q=Q.filter(x=>x.id!==rejId); renderQueue();} toast('Draft rejected. The agent reads your reason.')};
+
+  function startThreadUndo(){clearTimeout(timers.t41); timers.t41=setTimeout(()=>{tState='done'; renderThread(); toast('Sent to Ada Example')},10000)}
+
+  $$('input[name=vis]').forEach(r=>r.onchange=()=>{const rep=$('input[name=vis]:checked').value==='reply'; $('#cmp-warn').hidden=!rep; $('#cmp-post').textContent=rep?'Send reply':'Post note'; $('#cmp-ta').placeholder=rep?'Ada Example will see this.':'Only people on the portal see an internal note.'});
+  $('#cmp-post').onclick=()=>{close('#sh-compose'); toast($('input[name=vis]:checked').value==='reply'?'Reply sent to Ada Example':'Note posted')};
+
+  // ---- settings and more
+  function setAuto(on){$('#auto').checked=on; $('#autobar').classList.toggle('on',on); $('#autodesc').textContent=on?'On: agent replies to users are sent straight away, signed with the connecting person’s name.':'Off: every reply an agent writes for a user waits as a draft until a person approves it.'}
+  $('#auto').addEventListener('click',e=>{ if(e.target.checked){e.preventDefault(); open('#sh-auto')} else {setAuto(false); toast('Auto-approve is off')} });
+  $('#auto-ok').onclick=()=>{close('#sh-auto'); setAuto(true); toast('Auto-approve is on for Race Officials')};
+  $('[data-autooff]').onclick=()=>{setAuto(false); toast('Auto-approve is off')};
+  $('#push').onchange=e=>{const on=e.target.checked; $('#quiet').hidden=!on; $('#pushdesc').textContent=on?'On for drafts and decisions waiting for you. This phone only.':'Off. Turn on to hear when a draft or a decision is waiting.'; toast(on?'Notifications are on for this phone':'Notifications are off')};
+  $('#recovery-link').onclick=()=>{$('#recovery').hidden=false; $('#rc').focus()};
+  $('#answer').onclick=()=>{const v=$('input[name=d3]:checked').value; Q=Q.filter(x=>x.id!=='d3'); counts(); show('decisions'); toast('Answer recorded: '+v+'. The agent will see it.')};
+
+  // ---- navigation
+  let view='attention';
+  function show(v){
+    let sub=null; if(v==='attention-empty'){Q=[];sub=1;v='attention'} if(v==='attention-fail'){failId='q41';v='attention'} if(v==='thread-sent'){tState='done';v='thread'} else if(v==='thread'){tState='draft'}
+    view=v; const auth=(v==='signin'||v==='consent');
+    $('#shell').hidden=auth; $('#v-signin').hidden=v!=='signin'; $('#v-consent').hidden=v!=='consent';
+    ['attention','reports','thread','decisions','decision','more','settings','agents'].forEach(x=>$('#v-'+x).hidden=x!==v);
+    document.body.classList.toggle('pushed',!!PUSHED[v]);
+    $('#tb-title').textContent=TITLES[v]||'';
+    const base=PUSHED[v]&&v!=='settings'&&v!=='agents'?PUSHED[v]:v;
+    $$('[data-go]').forEach(a=>{ if(a.closest('.nav,.bottombar')&&!a.hasAttribute('data-site')){ if(a.dataset.go===base) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current'); } });
+    if(v==='attention') renderQueue(); if(v==='thread') renderThread();
+    window.scrollTo(0,0);
+    const h=document.querySelector('#v-'+v+' h1'); if(h&&!auth){h.setAttribute('tabindex','-1'); h.focus({preventScroll:true})}
+  }
+  $('#back').onclick=()=>show(PUSHED[view]||'attention');
+  pick.onchange=()=>{ Object.values(timers).forEach(clearTimeout); Q=JSON.parse(JSON.stringify(Q0)); failId=null; show(pick.value)};
+
+  document.addEventListener('click',e=>{
+    const t=e.target;
+    const go=t.closest('[data-go]'); if(go){e.preventDefault(); show(go.dataset.go); return}
+    const ap=t.closest('[data-approve]'); if(ap){ const id=ap.dataset.approve; if(id==='t41'){tState='undo'; renderThread(); startThreadUndo();} else approve(id); return}
+    const ed=t.closest('[data-edit]'); if(ed){startEdit(ed.dataset.edit); return}
+    const rj=t.closest('[data-reject]'); if(rj){rejId=rj.dataset.reject; $$('#sh-reject input').forEach(i=>{i.checked=false; if(i.type==='text') i.value=''}); $('#rej-err').hidden=true; open('#sh-reject'); return}
+    const un=t.closest('[data-undo]'); if(un){const id=un.dataset.undo; clearTimeout(timers[id]); if(id==='t41'){tState='draft'; renderThread();} else {const it=findQ(id); if(it) delete it.undo; renderQueue(); const c=document.querySelector(`[data-id="${id}"]`); if(c) c.focus();} toast('Not sent. The draft is back.'); return}
+    const vw=t.closest('[data-viewer]'); if(vw){capTabs($('[data-captabs="viewer"]'),vw.dataset.viewer,'vw'); open('#sh-viewer'); return}
+    const mo=t.closest('[data-more]'); if(mo){const c=mo.previousElementSibling; c.classList.remove('clamp-3','clamp-6'); mo.remove(); return}
+    if(t.closest('[data-close]')){tryClose(t.closest('dialog')); return}
+    if(t.closest('#statusbtn')){open('#sh-status'); return}
+    if(t.closest('[data-compose]')){$('#cmp-ta').value=''; open('#sh-compose'); return}
+    if(t.closest('[data-refresh]')){toast('Up to date'); return}
+    if(t.closest('[data-copyhtml]')){toast('HTML copied'); return}
+    if(t.closest('[data-noop]')){toast('Prototype: not wired'); return}
+  });
+  // desktop shortcuts on the queue
+  document.addEventListener('keydown',e=>{
+    if(document.querySelector('dialog[open]')||/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+    if(e.key==='?'){open('#sh-keys');return}
+    if(view!=='attention') return;
+    const cards=$$('#queue article'); if(!cards.length) return;
+    if(e.key==='j'||e.key==='k'){cur=Math.max(0,Math.min(cards.length-1,cur+(e.key==='j'?1:-1))); cards[cur].focus(); return}
+    const c=cards[cur]; if(!c) return; const id=c.dataset.id;
+    if(e.key==='a'&&c.querySelector('[data-approve]')) approve(id);
+    if(e.key==='e'&&c.querySelector('[data-edit]')) startEdit(id);
+    if(e.key==='r'&&c.querySelector('[data-reject]')) c.querySelector('[data-reject]').click();
+  });
+  $('#theme').onclick=()=>{const r=document.documentElement; const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches); r.dataset.theme=dark?'light':'dark'};
+  show('attention');
+})();
+</script>
+</body>
+</html>
