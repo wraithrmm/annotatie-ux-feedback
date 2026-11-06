@@ -12,13 +12,13 @@ terraform {
     }
   }
 
-  # First apply: leave this commented out (local state creates the bucket).
-  # Then uncomment, and run:  tofu init -migrate-state -backend-config=backend.hcl
-  # backend "s3" {
-  #   key          = "bootstrap/terraform.tfstate"
-  #   use_lockfile = true
-  #   encrypt      = true
-  # }
+  # State lives in the bucket the first apply created. Bucket and region come from backend.hcl
+  # (tofu output -raw backend_hcl > backend.hcl), e.g.  tofu init -backend-config=backend.hcl
+  backend "s3" {
+    key          = "bootstrap/terraform.tfstate"
+    use_lockfile = true
+    encrypt      = true
+  }
 }
 
 provider "aws" {

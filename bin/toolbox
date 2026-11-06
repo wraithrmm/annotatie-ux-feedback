@@ -22,7 +22,7 @@ fi
 
 mkdir -p "$HOME/.aws"
 tty_flags=(-i)
-if [[ -t 0 && -t 1 ]]; then tty_flags=(-it); fi
+if [[ -t 0 && -t 1 ]]; then tty_flags=(-it); elif [[ ! -t 0 ]]; then tty_flags=(-i); fi
 
 exec docker run --rm "${tty_flags[@]}" \
   -v "$(to_host "$REPO_ROOT"):/work" \

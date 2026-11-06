@@ -5,7 +5,7 @@ One install gives an agent the Annotatie connector, its skills, and the rules fo
 ## Install
 
 ```text
-/plugin marketplace add <owner>/annotatie
+/plugin marketplace add wraithrmm/annotatie-ux-feedback
 /plugin install annotatie@annotatie
 /mcp                      sign in to "annotatie" as yourself
 /annotatie:liaison 5m     in the session that orchestrates other agents

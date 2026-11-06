@@ -19,3 +19,6 @@ crash.log
 
 # Annotatie plugin: per-project liaison ledger and opt-out marker
 .annotatie/
+
+# Local backend settings (bucket name), written from the bootstrap output
+infra/bootstrap/backend.hcl
