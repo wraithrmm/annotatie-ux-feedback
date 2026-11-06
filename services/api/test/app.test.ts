@@ -29,6 +29,9 @@ const fakeCaptures: CaptureStore = {
   async html() {
     return Buffer.from("gz");
   },
+  async bytes() {
+    return Buffer.from("RIFF0000WEBP");
+  },
   async purge() {},
 };
 

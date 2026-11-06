@@ -30,6 +30,8 @@ export interface CaptureStore {
   confirm(siteId: string, itemId: string, claimed: Record<string, { size: number; sha256: string }>): Promise<{ files: Capture["files"]; notes: string[] }>;
   viewUrl(siteId: string, itemId: string, file: CaptureFile): Promise<string>;
   html(siteId: string, itemId: string): Promise<Buffer>;
+  /** The stored bytes of one confirmed file (the MCP server returns images inline). */
+  bytes(siteId: string, itemId: string, file: CaptureFile): Promise<Buffer>;
   purge(siteId: string, itemId: string): Promise<void>;
 }
 
@@ -108,7 +110,11 @@ export function s3Captures(bucket: string, s3 = new S3Client({})): CaptureStore 
     },
 
     async html(siteId, itemId) {
-      const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key(siteId, itemId, "html") }));
+      return this.bytes(siteId, itemId, "html");
+    },
+
+    async bytes(siteId, itemId, file) {
+      const obj = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key(siteId, itemId, file) }));
       return Buffer.from(await obj.Body!.transformToByteArray());
     },
 
