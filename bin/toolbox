@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Run tofu, gh or aws inside Docker, from the folder you are in.
+#   bin/toolbox tofu plan          bin/toolbox gh auth login          bin/toolbox aws sts get-caller-identity
+#   bin/toolbox                    (an interactive shell)
+# Your ~/.aws is mounted so your profiles and SSO cache work. gh's login stays in the Docker volume
+# annotatie-gh (never on your machine); provider downloads are cached in annotatie-tofu-cache.
+# Passed through when set: AWS_PROFILE, AWS_REGION, GITHUB_TOKEN.
+set -euo pipefail
+
+IMAGE=annotatie-toolbox:1
+REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+REL=${PWD#"$REPO_ROOT"}
+if [[ "$REL" == "$PWD" ]]; then REL=""; fi   # outside the repo: start at its root
+
+# Docker on Windows wants Windows paths; stop Git Bash rewriting the container paths.
+to_host() { if command -v cygpath >/dev/null 2>&1; then cygpath -w "$1"; else printf '%s' "$1"; fi; }
+export MSYS_NO_PATHCONV=1
+
+if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+  docker build -q -t "$IMAGE" "$(to_host "$REPO_ROOT/tools/toolbox")" >/dev/null
+fi
+
+mkdir -p "$HOME/.aws"
+tty_flags=(-i)
+if [[ -t 0 && -t 1 ]]; then tty_flags=(-it); fi
+
+exec docker run --rm "${tty_flags[@]}" \
+  -v "$(to_host "$REPO_ROOT"):/work" \
+  -v "$(to_host "$HOME/.aws"):/root/.aws" \
+  -v annotatie-gh:/root/.config/gh \
+  -v annotatie-tofu-cache:/root/.tofu-cache \
+  -e TF_PLUGIN_CACHE_DIR=/root/.tofu-cache \
+  -e AWS_PROFILE -e AWS_REGION -e GITHUB_TOKEN \
+  -w "/work$REL" \
+  "$IMAGE" "${@:-bash}"

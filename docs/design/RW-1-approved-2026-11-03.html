@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Officials register – Race Officials</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&amp;family=Jost:wght@400..700&amp;display=swap">
+<style>
+/* ==========================================================================
+   RW-1 — the Report widget, drawn over a self-contained copy of frame S-101
+   (the staff shell) hosting the officials register list (S-306's list rows
+   and table, abridged). Concept design, not approved for implementation
+   (D-500). Tokens are palette-spec.md revision 7 §3/§7, copied from S-101's
+   prototype; components follow §4.2 (forms), §4.3 (tags), §4.4 (feedback),
+   §4.5 (lists), §4.6 (navigation), §4.7 (the flyout the panels are built
+   from), and MOB-r1 §3.1, §3.11, §3.13 on a phone.
+   Every responsive rule is a container query on the frame (.vp, container
+   "app"), so the 390 / 820 / 1280 switch renders truthfully.
+   ========================================================================== */
+:root {
+  color-scheme: light;
+  --color-accent: #0d2c6c; --color-accent-content: #0d2c6c; --color-accent-foreground: #ffffff; --color-accent-hover: #25417b;
+  --color-zinc-50: #f7faff; --color-zinc-100: #ecf4ff; --color-zinc-200: #d9e8fb; --color-zinc-300: #c7d6e8;
+  --color-zinc-400: #95a3b4; --color-zinc-500: #677485; --color-zinc-600: #495565; --color-zinc-700: #354150;
+  --color-zinc-800: #1c2735; --color-zinc-900: #0f1926; --color-zinc-950: #030a16;
+  --color-border-control: #808d9f;
+  --color-selection: #eff9fd; --color-selection-bar: #0889ae;
+  --success-text: #06773c; --success-bg: #e4ffea; --success-border: #0e994f; --success-icon: #0e994f; --success-tint: #e7f8ed; --success-subtle: #9cfdb7;
+  --warning-text: #855903; --warning-bg: #fff5e8; --warning-border: #ab7408; --warning-icon: #ab7408; --warning-tint: #fcf2e3; --warning-subtle: #ffddb0;
+  --danger-text: #93060f;  --danger-bg: #fff4f2;  --danger-border: #ba0e17;  --danger-icon: #ba0e17;  --danger-solid: #ba0e17; --danger-tint: #ffefee; --danger-subtle: #fed9d4;
+  --info-text: #0a6d8c;    --info-bg: #edf9ff;    --info-border: #018db4;    --info-icon: #018db4;    --info-tint: #e5f7fd;    --info-subtle: #beebfe;
+  --tag-neutral-bg: #eff1f4; --tag-neutral-text: var(--color-zinc-800); --tag-neutral-border: var(--color-zinc-500);
+  --border-chrome: var(--color-zinc-300); --border-strong: var(--color-zinc-900);
+  --nav-current-bg: var(--color-zinc-100); --nav-current-bar: var(--color-accent); --nav-current-text: var(--color-zinc-900);
+  --nav-text: var(--color-zinc-800); --nav-icon: var(--color-zinc-500); --nav-heading: var(--color-zinc-600); --nav-count: var(--color-zinc-600);
+  --focus-ring: #0d2c6c;
+  --surface-page: #ffffff; --surface-sunken: var(--color-zinc-50); --surface-hover: var(--color-zinc-100);
+  --text-primary: var(--color-zinc-800); --text-data: var(--color-zinc-700); --text-muted: var(--color-zinc-500); --text-muted-strong: var(--color-zinc-600);
+  --text-link: var(--color-accent-content);
+  --border-divider: var(--color-zinc-200); --border-control: var(--color-border-control);
+  --on-solid: #ffffff; --btn-primary-border: rgb(0 0 0 / 0.10); --btn-primary-highlight: rgb(255 255 255 / 0.20);
+  --ghost-hover: rgb(28 39 53 / 0.05); --backdrop: rgb(0 0 0 / 0.10); --skeleton: var(--color-zinc-100);
+  --shadow-sticky: 0 1px 0 #d9e8fb, 0 2px 4px rgb(15 25 38 / .06);
+  --font-sans: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-heading: Jost, Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --radius-sm: 4px; --radius-md: 6px; --radius-lg: 8px; --radius-xl: 12px; --radius-full: 9999px;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--surface-sunken); color: var(--text-primary); font-family: var(--font-sans); font-size: 14px; line-height: 20px; -webkit-font-smoothing: antialiased; }
+p, ul, ol, dl, dd, figure, fieldset { margin: 0; }
+:where(fieldset) { border: 0; padding: 0; min-width: 0; }
+h1, h2, h3, h4 { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+a:hover { text-decoration-thickness: 2px; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+:focus:not(:focus-visible) { outline: none; }
+.i { display: inline-block; flex: none; vertical-align: middle; fill: currentColor; }
+.i-16 { width: 16px; height: 16px; } .i-20 { width: 20px; height: 20px; } .i-24 { width: 20px; height: 20px; fill: none; }
+
+/* ---------- Review layer (review chrome, not part of the design) ---------- */
+.rv { background: var(--surface-page); border-bottom: 1px solid var(--border-chrome); padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 6px 20px; align-items: center; font-size: 13px; line-height: 18px; }
+.rv .rv-id { font-weight: 600; }
+.rv .rv-meta { color: var(--text-muted-strong); flex: 1 1 22rem; min-width: 0; }
+.rv fieldset { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.rv legend { float: left; margin: 0 6px 0 0; padding: 0; font-weight: 600; font-size: 13px; }
+.rv .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; background: var(--color-zinc-100); border-radius: var(--radius-md); }
+.rv .seg label { position: relative; display: inline-flex; align-items: center; min-height: 28px; padding: 4px 10px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted-strong); font-weight: 500; white-space: nowrap; }
+.rv .seg input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.rv .seg label:has(input:checked) { background: var(--surface-page); color: var(--text-primary); font-weight: 600; box-shadow: 0 0 0 1px var(--border-control); }
+.rv .seg label:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.rv .st { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+.rv .st label { font-weight: 600; }
+.rv select { max-width: min(100%, 30rem); min-height: 32px; padding: 4px 8px; border: 1px solid var(--border-control); border-radius: var(--radius-md); background: var(--surface-page); font-size: 13px; }
+.pf { max-width: 1320px; margin: 0 auto; padding: 20px 16px 0; }
+.pf > h2, .stage-h > h2 { font-family: var(--font-heading); font-size: 22px; line-height: 28px; font-weight: 500; }
+.pf > p, .stage-h > p { color: var(--text-muted-strong); font-size: 13px; line-height: 18px; max-width: 90ch; margin: 4px 0 16px; }
+.pf-scroll { overflow-x: auto; overflow-y: hidden; padding-bottom: var(--space-1); }
+.pf-grid { display: flex; gap: 24px 20px; width: max-content; }
+.pf-one { width: 406px; margin: 0; }
+.pf-one .dev { display: inline-block; padding: 8px; background: var(--color-zinc-800); border-radius: 30px; box-shadow: var(--shadow-lg); }
+.pf-one .vp { width: 390px; border-radius: 22px; outline: 0; }
+.pf-one figcaption { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); padding-top: 8px; max-width: 390px; }
+.pf-one figcaption b { display: block; color: var(--text-primary); font-weight: 600; }
+.stage-h { max-width: 1320px; margin: 0 auto; padding: 28px 16px 0; }
+.stage { padding: 16px; overflow-x: clip; }
+.stage.is-phone { text-align: center; }
+.stage.is-phone .dev { display: inline-block; padding: 8px; background: var(--color-zinc-800); border-radius: 30px; box-shadow: var(--shadow-lg); text-align: start; }
+.stage.is-phone .vp { border-radius: 22px; outline: 0; }
+.rn-wrap, .prov { max-width: 1320px; margin: 0 auto; padding: 16px 16px 0; }
+.rnotes { background: var(--surface-page); border: 1px solid var(--border-divider); border-radius: var(--radius-xl); padding: 4px 16px; font-size: 13px; line-height: 18px; color: var(--text-data); }
+.rnotes > summary { cursor: pointer; font-weight: 600; color: var(--text-primary); min-height: 32px; display: flex; align-items: center; }
+.rnotes[open] { padding-bottom: 12px; }
+.rnotes ul { padding-inline-start: 18px; display: grid; gap: 10px; max-width: 95ch; }
+.rnotes .rn-c { display: block; color: var(--text-muted-strong); }
+.prov { padding-bottom: 40px; font-size: 13px; line-height: 18px; color: var(--text-data); }
+.prov h2 { font-size: 14px; line-height: 20px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary); }
+.prov ul { padding-inline-start: 18px; display: grid; gap: 4px; max-width: 110ch; }
+
+/* ---------- The frame: one viewport, 800px tall, the page scrolling inside --- */
+.vp { container: app / inline-size; width: var(--vp-w, 1280px); height: 800px; margin-inline: auto; background: var(--surface-page); outline: 1px solid var(--border-chrome); outline-offset: -1px; position: relative; overflow: hidden; }
+.app { position: relative; display: flex; flex-direction: column; height: 100%; background: var(--surface-page); }
+.shell { display: flex; flex: 1 1 auto; min-height: 0; position: relative; }
+.col { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+.main { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scroll-padding-top: 8px; scroll-padding-bottom: 88px; }
+.main:focus { outline: none; }
+.page { position: relative; padding: var(--space-8); display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); align-content: start; max-width: 80rem; }
+.sidebar { flex: none; width: 256px; background: var(--surface-page); color: var(--nav-text); border-inline-end: 1px solid var(--border-chrome); display: flex; flex-direction: column; padding: var(--space-4) var(--space-3); gap: var(--space-4); overflow-y: auto; scroll-padding-block: 8px; }
+.sb-brand { display: grid; gap: 2px; padding: var(--space-1) var(--space-2) var(--space-4); }
+.brand-ws { font-size: 13px; line-height: 18px; color: var(--text-muted); }
+.product-name { font-family: var(--font-heading); font-size: 18px; line-height: 24px; font-weight: 500; color: var(--text-primary); margin: 0; }
+.sidebar .sb-close { display: none; }
+.nav-group + .nav-group { margin-top: var(--space-4); }
+.nav-group > .ng-h { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--nav-heading); padding: 0 var(--space-3) var(--space-1); }
+.nav-group ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 2px; }
+.nav-item { display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 5px 8px 5px 12px; border-radius: var(--radius-lg); color: var(--nav-text); text-decoration: none; }
+.nav-item > .i { color: var(--nav-icon); }
+.nav-item:hover { background: var(--surface-hover); }
+.nav-item[aria-current="page"] { background: var(--nav-current-bg); color: var(--nav-current-text); font-weight: 600; box-shadow: inset 4px 0 0 var(--nav-current-bar); border-start-start-radius: 0; border-end-start-radius: 0; }
+.nav-item[aria-current="page"] > .i { color: var(--color-accent); }
+.nav-item .lbl { flex: 1 1 auto; min-width: 0; }
+.count-plain { font-size: 13px; line-height: 18px; color: var(--nav-count); font-variant-numeric: tabular-nums; }
+.sb-foot { margin-top: auto; border-top: 1px solid var(--border-chrome); padding-top: var(--space-3); display: grid; gap: var(--space-2); }
+.sb-who { display: flex; gap: var(--space-3); align-items: flex-start; padding-inline: var(--space-2); }
+.avatar { width: 32px; height: 32px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--color-zinc-100); color: var(--text-primary); font-size: 13px; font-weight: 600; flex: none; }
+.sb-who .who { display: grid; min-width: 0; }
+.sb-who .who span { font-size: 13px; line-height: 18px; color: var(--text-muted); }
+.phone-bar { display: none; align-items: center; gap: var(--space-2); min-height: 56px; padding-inline: var(--space-1); background: var(--surface-page); border-bottom: 1px solid var(--border-chrome); position: relative; z-index: 50; flex: none; }
+.phone-bar .product-name { flex: 1 1 auto; min-width: 0; padding-inline-start: var(--space-2); }
+.scrim { display: none; }
+@container app (max-width: 1023px) {
+  .phone-bar { display: flex; }
+  .sidebar { display: none; position: absolute; top: 0; inset-inline-start: 0; bottom: 0; z-index: 70; box-shadow: var(--shadow-lg); width: 288px; max-width: 82%; }
+  .app.nav-open .sidebar { display: flex; }
+  .app.nav-open .scrim { display: block; position: absolute; inset: 0; z-index: 60; background: var(--backdrop); }
+  .sidebar .sb-close { display: inline-flex; align-self: flex-end; width: 44px; min-height: 44px; }
+  .nav-item { min-height: 40px; }
+  .page { padding: var(--space-6); }
+}
+@container app (max-width: 639px) { .page { padding: 0 0 var(--space-8); gap: var(--space-4); } }
+
+/* ---------- Buttons ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 40px; padding: 9px var(--space-4); border: 1px solid transparent; border-radius: var(--radius-lg); font-size: 14px; line-height: 20px; font-weight: 500; text-align: center; text-decoration: none; cursor: pointer; background: transparent; color: var(--text-primary); max-width: 100%; }
+.btn--primary { background: var(--color-accent); color: var(--color-accent-foreground); border-color: var(--btn-primary-border); box-shadow: inset 0 1px 0 var(--btn-primary-highlight); }
+.btn--primary:hover { background: var(--color-accent-hover); }
+.btn--outline { background: var(--surface-page); border-color: var(--border-control); box-shadow: var(--shadow-xs); }
+.btn--outline:hover { background: var(--surface-hover); }
+.btn--ghost:hover { background: var(--ghost-hover); }
+.btn--sm { min-height: 32px; padding: 5px var(--space-3); border-radius: var(--radius-md); }
+.btn--icon { flex: none; padding: 0; width: 40px; }
+.phone-bar .btn--icon { width: 44px; min-height: 44px; }
+.linkbtn { display: inline-flex; align-items: center; min-height: 24px; padding: 0; border: 0; background: none; color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; font-weight: 500; text-align: start; }
+
+/* ---------- Page header, tags, banners, feedback (S-101) ---------- */
+.ph { display: grid; gap: var(--space-4); justify-items: start; }
+.ph-top { display: flex; align-items: center; gap: var(--space-4); width: 100%; }
+.ph-top .crumbs { flex: 1 1 auto; min-width: 0; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.crumbs a { display: inline-flex; align-items: center; min-height: 24px; }
+.t-page { font-family: var(--font-heading); font-size: 30px; line-height: 36px; font-weight: 500; }
+.ph-lead { color: var(--text-data); max-width: 74ch; }
+.ph-acts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+@container app (max-width: 1023px) { .ph .ph-help { display: none; } }
+.tag { display: inline-flex; align-items: center; gap: var(--space-1); min-height: 24px; padding: 3px var(--space-3); border-radius: var(--radius-full); font-size: 13px; line-height: 18px; font-weight: 500; vertical-align: middle; background: var(--tag-neutral-bg); color: var(--tag-neutral-text); white-space: nowrap; }
+.tag > .i { margin-inline-start: -4px; }
+.tag--sm { min-height: 20px; padding-block: 1px; }
+.tag--success { background: var(--success-tint); color: var(--success-text); }
+.tag--warning { background: var(--warning-tint); color: var(--warning-text); }
+.tag--danger { background: var(--danger-tint); color: var(--danger-text); }
+.tag--info { background: var(--info-tint); color: var(--info-text); }
+.banner { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid; border-radius: var(--radius-xl); }
+.banner--staging { background: var(--color-zinc-900); border-color: var(--color-zinc-900); color: var(--on-solid); }
+.callout { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--space-3); padding: var(--space-3) var(--space-4); border: 1px solid; border-radius: var(--radius-xl); }
+.callout > .i { grid-row: span 4; margin-top: 0; }
+.callout .c-h { font-weight: 600; }
+.callout p { overflow-wrap: anywhere; }
+.callout a { color: inherit; }
+.callout--success { background: var(--success-bg); border-color: var(--success-subtle); color: var(--success-text); }
+.callout--success > .i { color: var(--success-icon); }
+.callout--warning { background: var(--warning-bg); border-color: var(--warning-subtle); color: var(--warning-text); }
+.callout--warning > .i { color: var(--warning-icon); }
+.callout--danger { background: var(--danger-bg); border-color: var(--danger-subtle); color: var(--danger-text); }
+.callout--danger > .i { color: var(--danger-icon); }
+.callout--info { background: var(--info-bg); border-color: var(--info-subtle); color: var(--info-text); }
+.callout--info > .i { color: var(--info-icon); }
+.empty { display: grid; justify-items: start; gap: var(--space-3); padding: var(--space-6) var(--space-5); border: 1px solid var(--border-divider); border-radius: var(--radius-xl); }
+.empty .h, .err-panel .h { font-size: 16px; line-height: 24px; font-weight: 600; }
+.err-panel { border: 1px solid var(--border-divider); border-radius: var(--radius-xl); padding: var(--space-6) var(--space-5); display: grid; justify-items: start; gap: var(--space-3); }
+.err-panel .h { display: flex; gap: var(--space-2); align-items: center; }
+.err-panel .h .i { color: var(--danger-icon); }
+.skel { display: block; height: 12px; border-radius: var(--radius-full); background: var(--skeleton); }
+.resline { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); font-variant-numeric: tabular-nums; }
+
+/* ---------- The host list: the register's table (640px and up) and rows ---- */
+.tcard { border: 1px solid var(--border-divider); border-radius: var(--radius-xl); overflow: hidden; }
+.tscroll { overflow: auto; }
+.tscroll:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+table.reg { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 44rem; }
+table.reg caption { text-align: start; padding: var(--space-3) var(--space-4); font-size: 13px; line-height: 18px; color: var(--text-muted-strong); border-bottom: 1px solid var(--border-divider); }
+table.reg th, table.reg td { text-align: start; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-divider); }
+table.reg thead th { height: 40px; background: var(--surface-sunken); font-size: 13px; line-height: 18px; font-weight: 600; color: var(--text-muted-strong); white-space: nowrap; }
+table.reg tbody tr { height: 45px; }
+table.reg tbody td { color: var(--text-data); }
+table.reg .nm a { display: inline-flex; align-items: center; min-height: 24px; font-weight: 600; }
+.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border-divider); }
+.rows > li { border-bottom: 1px solid var(--border-divider); }
+.rrow { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-3); row-gap: var(--space-1); align-content: center; min-height: 95px; padding: var(--space-3) var(--space-4); color: inherit; text-decoration: none; }
+.rrow .nm { grid-column: 1; grid-row: 1; font-size: 16px; line-height: 22px; font-weight: 600; color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+.rrow .stat { grid-column: 2; grid-row: 1; justify-self: end; align-self: start; }
+.rrow .l2 { grid-column: 1 / -1; font-size: 14px; line-height: 20px; color: var(--text-data); overflow-wrap: anywhere; }
+.rrow .l3 { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px var(--space-3); font-size: 13px; line-height: 18px; color: var(--text-muted-strong); }
+.p-head { padding: var(--space-4) var(--space-4) 0; display: grid; gap: var(--space-3); }
+.p-h1 { font-family: var(--font-heading); font-size: 26px; line-height: 32px; font-weight: 500; }
+.p-pad { padding-inline: var(--space-4); }
+.app.ph-mode .ph-acts .btn { width: 100%; min-height: 44px; }
+
+/* ==========================================================================
+   THE REPORT WIDGET (RW-1). Everything below is the widget's own layer: it is
+   mounted only for a person holding the permission (D-499 §2). Its nodes carry
+   data-rw so report mode's capture layer can tell them from the page's.
+   Nothing here is position: fixed inside a phone layout (MOB-r1 §4.5).
+   ========================================================================== */
+.rw-layer { position: absolute; inset: 0; z-index: 85; pointer-events: none; }
+.rw-layer > * { pointer-events: auto; }
+.rw-layer > .rw-box, .rw-layer > .rw-boxes { pointer-events: none; }
+
+/* --- The Report control. 1024px and up: a floating button at the frame's
+   bottom-end corner, 24px in, lifted above any sticky bottom bar or toast.
+   Below 1024px: a button in the 56px app bar, before Help, so on a phone it
+   can never cover a bottom bar, a primary action or the navigation (M-11). */
+.rw-fab { position: absolute; inset-inline-end: 24px; bottom: calc(24px + var(--rw-lift, 0px)); min-height: 44px; padding: 10px 14px 10px 12px; border-radius: var(--radius-full); background: var(--surface-page); border: 1px solid var(--border-control); box-shadow: var(--shadow-lg); font-weight: 600; }
+.rw-fab:hover { background: var(--surface-hover); }
+/* the page's end clears the floating button: 24 + 44 + 24 = 92px, so the last
+   row can always be scrolled out from under it, and a focused control never
+   settles beneath it (scroll-padding-bottom, rule 19, WCAG 2.4.11) */
+@container app (min-width: 1024px) { .app.has-rw .page { padding-bottom: 96px; } .app.has-rw .main { scroll-padding-bottom: 96px; } }
+.rw-barbtn { min-height: 44px; padding: 0 10px; gap: 6px; font-weight: 600; flex: none; }
+.rw-fab[aria-pressed="true"], .rw-barbtn[aria-pressed="true"] { background: var(--color-accent); color: var(--color-accent-foreground); border-color: var(--color-accent); }
+.rw-fab[aria-pressed="true"] .cpill, .rw-barbtn[aria-pressed="true"] .cpill { background: var(--surface-page); color: var(--color-zinc-800); }
+.cpill { display: inline-grid; place-items: center; min-width: 20px; min-height: 20px; padding-inline: 6px; border-radius: var(--radius-full); background: var(--tag-neutral-bg); color: var(--color-zinc-800); font-size: 13px; line-height: 18px; font-weight: 500; font-variant-numeric: tabular-nums; }
+@container app (max-width: 639px) { .rw-barbtn .rw-word { display: none; } }
+
+/* --- The report-mode bar: a flex sibling ABOVE the page's scroller, so it
+   pushes the page down rather than covering it. Selection ground and the 2px
+   aqua edge tie it to the outline it draws (rule 21: the outline is solid and
+   labelled, never a tint alone). */
+.rw-modebar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-4); padding: var(--space-3) var(--space-6); background: var(--color-selection); border-bottom: 2px solid var(--color-selection-bar); position: relative; z-index: 40; }
+.rw-modebar .mb-text { flex: 1 1 26rem; min-width: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0 var(--space-3); }
+.rw-modebar .mb-text .i { grid-row: span 2; color: var(--color-selection-bar); margin-top: 0; }
+.rw-modebar .mb-h { font-weight: 600; }
+.rw-modebar .mb-k { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); }
+.rw-modebar .mb-acts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+@container app (max-width: 639px) {
+  .rw-modebar { padding: var(--space-3) var(--space-4); gap: var(--space-2); }
+  .rw-modebar .mb-text { flex-basis: 100%; }
+  .rw-modebar .mb-k { display: none; }
+  .rw-modebar .mb-acts { width: 100%; }
+  .rw-modebar .mb-acts .btn { flex: 1 1 0; min-width: 0; min-height: 44px; padding-inline: var(--space-2); white-space: normal; }
+}
+
+/* --- The outline report mode draws: hover (2px solid aqua), keyboard
+   highlight (the same plus a 2px accent ring at 2px, the focus ring's own
+   geometry), selected (3px aqua). Each carries a dark label naming the part
+   in words, so the cue is never the outline colour alone. */
+.rw-box { position: absolute; border: 2px solid var(--color-selection-bar); border-radius: var(--radius-sm); background: color-mix(in srgb, var(--color-selection-bar) 7%, transparent); }
+.rw-box.is-key { box-shadow: 0 0 0 2px var(--surface-page), 0 0 0 4px var(--focus-ring); }
+.rw-box.is-sel { border-width: 3px; }
+.rw-box .rw-lbl { position: absolute; bottom: calc(100% + 4px); inset-inline-start: -3px; max-width: min(36ch, 80cqi); padding: 2px 8px; border-radius: var(--radius-sm); background: var(--color-zinc-900); color: var(--on-solid); font-size: 13px; line-height: 18px; font-weight: 500; overflow-wrap: anywhere; width: max-content; }
+.rw-box.lbl-below .rw-lbl { bottom: auto; top: calc(100% + 4px); }
+
+/* --- Pins: number + status icon, the status tone's edge; resolved pins are
+   dashed. The accessible name carries the status in words. */
+.rw-pins { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+.rw-pin { pointer-events: auto; position: absolute; z-index: 5; display: inline-flex; align-items: center; gap: 4px; min-height: 28px; min-width: 28px; padding: 2px 8px 2px 6px; border-radius: var(--radius-full); background: var(--surface-page); border: 2px solid var(--tag-neutral-border); color: var(--color-zinc-800); font-size: 13px; line-height: 18px; font-weight: 600; font-variant-numeric: tabular-nums; box-shadow: var(--shadow-xs); cursor: pointer; }
+.rw-pin:hover { background: var(--surface-hover); }
+.rw-pin.st-answered { border-color: var(--info-border); color: var(--info-text); }
+.rw-pin.st-answered .i { color: var(--info-icon); }
+.rw-pin.st-resolved { border-style: dashed; border-color: var(--success-border); color: var(--success-text); }
+.rw-pin.st-resolved .i { color: var(--success-icon); }
+.rw-pin.is-shown { box-shadow: 0 0 0 3px var(--color-selection-bar); }
+/* on a phone the drawn pin stays 28px but its hit area is 44 x 44 (M-5) */
+.rw-pin::before { content: ""; position: absolute; inset: -2px; }
+@container app (max-width: 639px) { .rw-pin { min-width: 44px; justify-content: center; } .rw-pin::before { inset: -10px 0; } }
+
+/* --- The comment panel: a popover anchored to the part (640px and up) or a
+   bottom sheet (below 640px, MOB-r1 §3.11, radius 16 on the top corners). */
+.rw-pop { position: absolute; width: min(24rem, calc(100% - 32px)); max-height: calc(100% - 32px); display: flex; flex-direction: column; background: var(--surface-page); border: 1px solid var(--border-divider); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 90; }
+.rw-pop .pop-hd { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4) var(--space-2) var(--space-3) var(--space-4); border-bottom: 1px solid var(--border-divider); }
+.rw-pop .pop-hd .ht { flex: 1 1 auto; min-width: 0; display: grid; gap: 2px; }
+.rw-pop h2 { font-family: var(--font-heading); font-size: 20px; line-height: 26px; font-weight: 500; }
+.rw-pop h2:focus { outline: none; }
+.rw-pop .about { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); overflow-wrap: anywhere; }
+.rw-pop .pop-bd { padding: var(--space-4); overflow-y: auto; display: grid; gap: var(--space-4); }
+.rw-pop .pop-ft { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--border-divider); }
+.rw-pop .note { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); }
+.rw-pop .pop-hd .btn--icon { width: 40px; min-height: 40px; }
+.rw-pop.is-sheet { inset-inline: 0; bottom: 0; width: auto; max-height: calc(100% - 56px); border-radius: 16px 16px 0 0; border-inline: 0; border-bottom: 0; }
+.rw-pop.is-sheet.is-tall { top: 0; max-height: none; border-radius: 0; border-top: 0; }
+.rw-pop.is-sheet .pop-hd .btn--icon { width: 44px; min-height: 44px; }
+.rw-pop.is-sheet .pop-ft .btn { flex: 1 1 100%; min-height: 44px; }
+.rw-pop.is-sheet .ta { font-size: 16px; line-height: 22px; }
+.rw-scrim { position: absolute; inset: 0; background: var(--backdrop); z-index: 75; }
+
+/* --- Forms inside the widget (palette §4.2) */
+.fld { display: grid; gap: var(--space-1); }
+.lab { display: block; font-weight: 500; }
+.hint { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); }
+.ta { width: 100%; min-height: 112px; padding: 8px var(--space-3); border: 1px solid var(--border-control); border-radius: var(--radius-md); background: var(--surface-page); box-shadow: var(--shadow-xs); resize: vertical; font-size: 14px; line-height: 20px; }
+.fld.is-invalid { border-inline-start: 4px solid var(--danger-border); padding-inline-start: var(--space-3); }
+.fld.is-invalid .ta { border-color: var(--danger-border); }
+.err-msg { display: flex; gap: var(--space-1); align-items: flex-start; color: var(--danger-text); font-weight: 500; }
+.errsum { border: 2px solid var(--danger-border); border-radius: var(--radius-xl); padding: var(--space-3) var(--space-4); display: grid; gap: var(--space-2); }
+.errsum:focus { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.errsum h3 { font-size: 16px; line-height: 24px; font-weight: 600; color: var(--danger-text); }
+.errsum ul { padding-inline-start: 18px; }
+.errsum a { color: var(--danger-text); font-weight: 500; }
+.segc { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 2px; background: var(--color-zinc-100); border-radius: var(--radius-md); }
+.segc label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: 32px; padding: 5px var(--space-3); border-radius: var(--radius-sm); color: var(--text-data); cursor: pointer; }
+.segc input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.segc label:has(input:checked) { background: var(--surface-page); color: var(--text-primary); font-weight: 600; box-shadow: 0 0 0 1px var(--border-control), var(--shadow-xs); }
+.segc label:has(input:focus-visible) { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.is-sheet .segc { display: flex; } .is-sheet .segc label { flex: 1 1 0; min-height: 44px; }
+.legend { padding: 0 0 var(--space-1); font-weight: 500; }
+.spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-inline-end-color: transparent; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; border-inline-end-color: currentColor; border-style: dotted; } }
+
+/* --- Panels: the 25rem flyout of S-101's Help panel (palette §4.7) at 640px
+   and up; a full-height sheet below it (MOB-r1 §3.13). */
+.rw-fly { position: absolute; inset-block: 0; inset-inline-end: 0; z-index: 80; width: 25rem; max-width: 100%; background: var(--surface-page); border-inline-start: 1px solid var(--border-chrome); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; min-height: 0; }
+.fly-hd { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4) var(--space-3) var(--space-3) var(--space-5); border-bottom: 1px solid var(--border-divider); }
+.fly-hd .ht { flex: 1 1 auto; min-width: 0; display: grid; gap: var(--space-1); }
+.fly-hd h2 { font-family: var(--font-heading); font-size: 20px; line-height: 26px; font-weight: 500; overflow-wrap: anywhere; }
+.fly-hd h2:focus { outline: none; }
+.fly-hd .sub { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); overflow-wrap: anywhere; }
+.fly-hd .btn--icon { width: 44px; min-height: 44px; }
+.fly-bd { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--space-4) var(--space-5) var(--space-6); display: grid; gap: var(--space-4); align-content: start; }
+.fly-bd h3 { font-size: 16px; line-height: 24px; font-weight: 600; }
+.tabs { display: flex; gap: var(--space-1); padding-inline: var(--space-4); border-bottom: 1px solid var(--border-divider); flex: none; }
+.tab { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 8px var(--space-3); border: 0; background: none; color: var(--text-data); font-weight: 500; cursor: pointer; white-space: nowrap; border-radius: var(--radius-md) var(--radius-md) 0 0; }
+.tab:hover { background: var(--surface-hover); }
+.tab[aria-selected="true"] { color: var(--color-zinc-900); font-weight: 600; box-shadow: inset 0 -3px 0 var(--color-accent); }
+.tick { display: flex; align-items: center; gap: var(--space-3); min-height: 44px; cursor: pointer; }
+.tick input { width: 20px; height: 20px; margin: 0; accent-color: var(--color-accent); flex: none; }
+.rw-rows { list-style: none; margin: 0 calc(-1 * var(--space-5)); padding: 0; border-top: 1px solid var(--border-divider); }
+.rw-rows > li { border-bottom: 1px solid var(--border-divider); }
+.rw-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: var(--space-3); row-gap: var(--space-1); width: 100%; min-height: 72px; padding: var(--space-3) var(--space-5); border: 0; background: none; text-align: start; cursor: pointer; color: inherit; }
+.rw-row:hover { background: var(--surface-hover); }
+.rw-row:focus-visible { outline-offset: -4px; }
+.rw-row .nm { font-weight: 600; color: var(--text-link); text-decoration: underline; text-underline-offset: 2px; }
+.rw-row .stat { justify-self: end; }
+.rw-row .ex { grid-column: 1 / -1; color: var(--text-data); overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.rw-row .meta { grid-column: 1 / -1; font-size: 13px; line-height: 18px; color: var(--text-muted-strong); overflow-wrap: anywhere; }
+.rw-skel { display: grid; gap: var(--space-2); min-height: 72px; align-content: center; padding: var(--space-3) var(--space-5); }
+.msgs { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.msg { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px var(--space-3); }
+.msg .avatar { grid-row: span 2; }
+.msg .by { display: flex; flex-wrap: wrap; gap: 0 var(--space-2); align-items: baseline; }
+.msg .by b { font-weight: 600; }
+.msg .by span { font-size: 13px; line-height: 18px; color: var(--text-muted-strong); }
+.msg .body { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text-data); }
+.msg.evt { grid-template-columns: minmax(0, 1fr); font-size: 13px; line-height: 18px; color: var(--text-muted-strong); padding-inline-start: 44px; }
+.facts { display: grid; gap: var(--space-2); }
+.facts p { overflow-wrap: anywhere; }
+.acts { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.divider { border: 0; border-top: 1px solid var(--border-divider); margin: 0; }
+@container app (max-width: 639px) {
+  .rw-fly { width: 100%; border-inline-start: 0; }
+  .fly-bd { padding: var(--space-4) var(--space-4) var(--space-8); }
+  .rw-rows { margin-inline: calc(-1 * var(--space-4)); }
+  .rw-row { min-height: 95px; padding-inline: var(--space-4); }
+  .rw-skel { min-height: 95px; padding-inline: var(--space-4); }
+  .fly-bd .acts .btn, .fly-bd .btn { min-height: 44px; }
+  .fly-bd .acts .btn { flex: 1 1 100%; }
+  .fly-bd .ta { font-size: 16px; line-height: 22px; }
+  .tabs .tab { flex: 1 1 0; justify-content: center; }
+}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+<symbol id="m-check" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clip-rule="evenodd"/></symbol>
+<symbol id="m-minus-circle" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm4-7a.75.75 0 0 0-.75-.75h-6.5a.75.75 0 0 0 0 1.5h6.5A.75.75 0 0 0 12 8Z" clip-rule="evenodd"/></symbol>
+<symbol id="m-x-circle" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm2.78-4.22a.75.75 0 0 1-1.06 0L8 9.06l-1.72 1.72a.75.75 0 1 1-1.06-1.06L6.94 8 5.22 6.28a.75.75 0 0 1 1.06-1.06L8 6.94l1.72-1.72a.75.75 0 1 1 1.06 1.06L9.06 8l1.72 1.72a.75.75 0 0 1 0 1.06Z" clip-rule="evenodd"/></symbol>
+<symbol id="m-clock" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5v-3.5Z" clip-rule="evenodd"/></symbol>
+<symbol id="m-chat" viewBox="0 0 16 16"><path d="M1 8.74c0 .983.713 1.825 1.69 1.943.764.092 1.534.164 2.31.216v2.351a.75.75 0 0 0 1.28.53l2.51-2.51c.182-.181.427-.286.684-.294a44.298 44.298 0 0 0 3.837-.293C14.287 10.565 15 9.723 15 8.74V4.26c0-.983-.713-1.825-1.69-1.943a44.447 44.447 0 0 0-10.62 0C1.712 2.435 1 3.277 1 4.26v4.482Z"/></symbol>
+<symbol id="m-x-mark" viewBox="0 0 16 16"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></symbol>
+<symbol id="m-chevron-left" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/></symbol>
+<symbol id="n-check" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd"/></symbol>
+<symbol id="n-exclamation-triangle" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495ZM10 5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 10 5Zm0 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></symbol>
+<symbol id="n-x-circle" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 1 0 0-16 8 8 0 0 0 0 16ZM8.28 7.22a.75.75 0 0 0-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 1 0 1.06 1.06L10 11.06l1.72 1.72a.75.75 0 1 0 1.06-1.06L11.06 10l1.72-1.72a.75.75 0 0 0-1.06-1.06L10 8.94 8.28 7.22Z" clip-rule="evenodd"/></symbol>
+<symbol id="n-information-circle" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-7-4a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM9 9a.75.75 0 0 0 0 1.5h.253a.25.25 0 0 1 .244.304l-.459 2.066A1.75 1.75 0 0 0 10.747 15H11a.75.75 0 0 0 0-1.5h-.253a.25.25 0 0 1-.244-.304l.459-2.066A1.75 1.75 0 0 0 9.253 9H9Z" clip-rule="evenodd"/></symbol>
+<symbol id="n-cursor" viewBox="0 0 20 20"><path d="M6.3 2.84A1.5 1.5 0 0 0 4 4.11v11.78a1.5 1.5 0 0 0 2.3 1.27l2.33-1.47 1.5 3.06a.75.75 0 0 0 1 .35l1.8-.88a.75.75 0 0 0 .35-1l-1.5-3.06 2.73-.3a1.5 1.5 0 0 0 .82-2.6L6.3 2.84Z"/></symbol>
+<symbol id="o-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></symbol>
+<symbol id="o-bars-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></symbol>
+<symbol id="o-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></symbol>
+<symbol id="o-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"/></symbol>
+<symbol id="o-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM3 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 9.374 21c-2.331 0-4.512-.645-6.374-1.765Z"/></symbol>
+<symbol id="o-arrow-path" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></symbol>
+<symbol id="o-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></symbol>
+<symbol id="o-magnifying-glass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></symbol>
+<symbol id="o-envelope" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></symbol>
+<symbol id="o-circle-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75"/></symbol>
+<symbol id="o-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1 1 21.75 8.25Z"/></symbol>
+<symbol id="o-server-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 14.25h13.5m-13.5 0a3 3 0 0 1-3-3m3 3a3 3 0 1 0 0 6h13.5a3 3 0 1 0 0-6m-16.5-3a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3m-19.5 0a4.5 4.5 0 0 1 .9-2.7L5.74 5.1a3 3 0 0 1 2.4-1.2h7.72a3 3 0 0 1 2.4 1.2l2.59 3.45a4.5 4.5 0 0 1 .9 2.7m0 0a3 3 0 0 1-3 3m-13.5 3h.008v.008H5.25v-.008Zm0-6h.008v.008H5.25V8.25Z"/></symbol>
+<symbol id="o-arrow-right-on-rectangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></symbol>
+<symbol id="o-question-mark-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></symbol>
+<symbol id="o-arrow-down-tray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3"/></symbol>
+</svg>
+
+<div class="rv" role="region" aria-label="Review controls (not part of the design)">
+  <p class="rv-id">RW-1 · Report widget — an overlay on every app page for a person holding the permission, drawn over the officials register in frame S-101</p>
+  <p class="rv-meta">Concept design, not approved for implementation (D-500) · behaviour D-499 · palette PAL-r7 · phone standard MOB-r1 · made from S-101, S-306, S-415 and the palette's §4.2–§4.7 patterns · <code>Approved: 2026-11-03 (R-328), concept design — not approved for implementation (D-500)</code></p>
+  <fieldset><legend>Viewport</legend><div class="seg">
+    <label><input type="radio" name="vp" value="390">Phone 390</label>
+    <label><input type="radio" name="vp" value="820">Tablet 820</label>
+    <label><input type="radio" name="vp" value="1280" checked>Desktop 1280</label>
+  </div></fieldset>
+  <div class="st"><label for="state">State</label><select id="state"></select></div>
+</div>
+
+<section class="pf" aria-labelledby="pf-h">
+  <h2 id="pf-h">Phone layout, 390&nbsp;px — designed first</h2>
+  <p>The frames below are drawings of the phone layout at 390&nbsp;px, made before the tablet and desktop layout. On a phone the Report control lives in the 56&nbsp;px app bar, before Help, so it can never cover a bottom bar, a primary action or the navigation; report mode adds a bar under the app bar that pushes the page down rather than covering it; the comment panel is a bottom sheet (MOB-r1 §3.11) that fills the screen once the keyboard opens; threads and lists are full-height sheets (§3.13). The live frame further down is where every state is operated.</p>
+  <div class="pf-scroll"><div class="pf-grid" id="pf-grid" inert></div></div>
+</section>
+
+<div class="stage-h">
+  <h2>Live frame — every state, at 390, 820 and 1280&nbsp;px</h2>
+  <p>Press <b>Report</b> to enter report mode; point at or tab to any part of the page and press it (or Enter) to report on it; press a pin to open its thread; press <b>Reports</b> in the mode bar for this page's list and My reports. Esc closes the open panel, then leaves report mode. The state switch above jumps to any state, including the server outcomes a click cannot produce.</p>
+</div>
+<div class="stage" id="stage"><div class="dev" id="dev"><div class="vp" id="vp"></div></div></div>
+<p class="sr-only" role="status" id="live"></p>
+
+<div class="rn-wrap">
+<details class="rnotes">
+  <summary>Review notes: 14 assumptions and open questions</summary>
+  <ul>
+    <li><b>RW-A1 — where the Report control sits.</b> At 1024&nbsp;px and up it floats at the bottom-end corner, 24&nbsp;px in, and lifts by the height of any sticky bottom bar or toast stack the page shows (measured from the page's <code>data-bottom-bar</code> elements), so it never covers a bulk bar or a toast. Below 1024&nbsp;px it is a button in the 56&nbsp;px app bar, before Help: a floating button on a phone would cover the one bottom bar M-11 allows. It is therefore "a corner" at both sizes (bottom-end on a desktop, top-end on a phone and tablet), not one corner. <span class="rn-c">Concerns: the Report control in every state.</span></li>
+    <li><b>RW-A2 — the count on the Report control.</b> The neutral pill counts this page's reports that are not yet resolved (Open, Answered, In progress), including one whose part has gone. It is never magenta: the reports are everyone's, not the signed-in person's own queue (rule 26). Nothing at 0. <span class="rn-c">Concerns: the Report control and the Reports button in the mode bar.</span></li>
+    <li><b>RW-A3 — the status tone map for reports.</b> Open: neutral, <code>minus-circle</code>. Answered: info, chat bubble. In progress: neutral, <code>clock</code>. Resolved: success, the open <code>check</code>, and a dashed pin. Open and In progress share a tone and are told apart by icon and word. <span class="rn-c">Concerns: every status tag and pin.</span></li>
+    <li><b>RW-A4 — report numbers.</b> Reports are numbered in one sequence across the system ("Report 41") so a pin, a list row and a thread name the same thing on every page. design.md's table has no number column; a number derived from creation order is assumed (question Q1 in the report). <span class="rn-c">Concerns: pins, list rows, thread headings.</span></li>
+    <li><b>RW-A5 — Bug is chosen when the comment panel opens.</b> design.md says nothing but the comment is required, so the type starts on Bug and can be changed. <span class="rn-c">Concerns: the Type control.</span></li>
+    <li><b>RW-A6 — the comment's length limit.</b> 5,000 characters, refused by the server with "Your comment is 5,213 characters. Shorten it to 5,000 or fewer." (ST-2); not drawn as a counter. The figure is assumed (question Q2). <span class="rn-c">Concerns: the Comment and Your reply fields.</span></li>
+    <li><b>RW-A7 — a reply from the reporter re-opens an answered report.</b> Answered means "a reply waits for the reporter"; once the reporter replies the report goes back to Open. A reply from anyone else leaves the status unchanged. <span class="rn-c">Concerns: the thread's reply and status sentence.</span></li>
+    <li><b>RW-A8 — after Send, report mode stays on.</b> The person can report a second thing straight away; Close on the sent panel returns them to report mode, Done leaves it. <span class="rn-c">Concerns: the sent state.</span></li>
+    <li><b>RW-A9 — "Sign in again" opens the app's sign-in in a new tab</b> so the comment kept in this tab survives; the prototype's link goes to example.org. <span class="rn-c">Concerns: the signed-out state.</span></li>
+    <li><b>RW-A10 — a person with the read permission only</b> sees pins and threads, and a Report control labelled "Reports" that opens the list rather than report mode; no reply box, no Resolve or Reopen. <span class="rn-c">Concerns: the read-only state.</span></li>
+    <li><b>RW-A11 — My reports on another page.</b> In the app a row for another page opens that page at the pin with the thread open. The prototype draws only the register, so those rows open the thread here, with "Go to Today" as a link. <span class="rn-c">Concerns: My reports rows for Today and Status view.</span></li>
+    <li><b>RW-A12 — the host page is abridged.</b> The register is S-306's list cut to six rows with no filters, and the menu is S-101's without the Rules and configuration and Performance reviews groups. Outside report mode the host's own controls (menu items, Help, Export this list, row links) go nowhere in this file; only the widget and the navigation drawer are live. <span class="rn-c">Concerns: the host page, not the widget.</span></li>
+    <li><b>RW-A13 — the replier's name.</b> Replies show as the product owner's account, as D-499 (3) requires; it is the one real name in the file and appears only as a reply author. <span class="rn-c">Concerns: threads 41, 44, 29 and 36.</span></li>
+    <li><b>RW-A14 — the copy of the page is raw (D-499 (5)).</b> The comment panel says so in one sentence ("A copy of this page as you see it is sent with your report, with password fields left blank"), so nobody reports from a page showing something they would not send. <span class="rn-c">Concerns: the note in the comment panel.</span></li>
+  </ul>
+</details>
+</div>
+
+<div class="prov">
+<h2>Where every part comes from</h2>
+<ul>
+  <li><b>Behaviour</b> — design.md §1–§6 (D-499): the Report button in a corner of every page; report mode's capture layer (nothing on the page runs); hover outline, click to place a pin, "Comment on the whole page", arrow keys / Tab and Enter; type Bug / Feature / Question; the snapshot refused above 2&nbsp;MB with a page-level note; pins placed by selector, then readable anchor, then page-level; statuses Open, Answered, In progress, Resolved; "Show resolved pins"; My reports and the page's list; everyone permitted sees and answers every report.</li>
+  <li><b>Invisible without the permission</b> — design.md §2: the directive renders nothing at all, so the "Without the permission" state is the S-101 page with no widget markup.</li>
+  <li><b>Frame</b> — S-101 (the staff shell), its tokens, sidebar, app bar, banner and page-header anatomy copied unchanged; the staging banner because the tool runs on staging only (D-499 (2)).</li>
+  <li><b>Host list</b> — S-306: list rows below 640&nbsp;px (M-1, M-15), the captioned table from 640&nbsp;px, the result line with positions and people labelled and never added (rule 14).</li>
+  <li><b>Panels</b> — S-101's Help flyout (25rem, palette §4.7) at 640&nbsp;px and up; MOB-r1 §3.13 full-height sheet below; S-415's sheet footer; MOB-r1 §3.11 bottom sheet for the comment panel; palette §4.2 error summary and the 4px error bar; §4.4 callouts (never a toast for an error, rule 8); §4.6 tab counts as neutral pills.</li>
+  <li><b>People</b> — the synthetic register: Ellis Varnholt (signed in, staff administrator), Eero Halmelahti (<code>FINX915</code>), Lavanya Kodandaram (<code>INDX942</code>) as other testers; the officials in the host list from the register's cast. No new name was invented.</li>
+</ul>
+</div>
+
+<script>
+/* ==========================================================================
+   RW-1 runtime. Not production code: it draws the widget over the host page at
+   three widths and in every state, and makes report mode clickable. data-flux
+   names the Flux component an element maps to; data-component names ours.
+   ========================================================================== */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ic = (id, size) => `<svg class="i i-${size || 16}" aria-hidden="true" focusable="false"><use href="#${id}"/></svg>`;
+const $ = (r, s) => r.querySelector(s);
+const $$ = (r, s) => Array.from(r.querySelectorAll(s));
+const live = document.getElementById('live');
+function say(t) { live.textContent = ''; setTimeout(() => { live.textContent = t; }, 30); }
+
+/* ---------- people (synthetic register) ---------- */
+const PEOPLE = {
+  EV: { n: 'Ellis Varnholt', av: 'EV' },
+  EH: { n: 'Eero Halmelahti', av: 'EH' },
+  LK: { n: 'Lavanya Kodandaram', av: 'LK' },
+  RM: { n: 'Richard Mann', av: 'RM' }
+};
+const ME = 'EV';
+const STATUS = {
+  open:     { w: 'Open',        tone: 'neutral', icon: 'm-minus-circle' },
+  answered: { w: 'Answered',    tone: 'info',    icon: 'm-chat' },
+  progress: { w: 'In progress', tone: 'neutral', icon: 'm-clock' },
+  resolved: { w: 'Resolved',    tone: 'success', icon: 'm-check' }
+};
+const statusTag = (s, sm) => `<span class="tag ${STATUS[s].tone === 'neutral' ? '' : 'tag--' + STATUS[s].tone} ${sm ? 'tag--sm' : ''}" data-flux="badge" data-component="status-tag" data-size="sm">${ic(STATUS[s].icon)}${STATUS[s].w}</span>`;
+
+const LONG = 'Theexportbuttonlabelisreadaloudtwiceonmyscreenreaderandthenthelistannouncesitselfagainwhichmakesitveryhardtoknowwhetherthepresshasdoneanythingatallorwhetherthepageisstillloadingsomethingbehindthescenes';
+function dataset(kind) {
+  const R = [];
+  const base = [
+    { no: 41, type: 'Bug', status: 'answered', anchor: 'export', el: 'button “Export this list”', page: 'Officials register', by: 'EV', snap: true,
+      msgs: [ { by: 'EV', t: '2 Nov 2026 at 09:12 UTC', b: 'Export this list opened nothing the first time I pressed it. The second press opened the export options.' },
+              { by: 'RM', t: '2 Nov 2026 at 11:40 UTC', b: 'Thank you. The first press was lost while the list was still loading. The fix is on staging now, so the first press opens the export options. Could you try it again and say whether it still happens?' } ] },
+    { no: 38, type: 'Question', status: 'open', anchor: 'tag-ngaio', el: 'tag “Expiring” in the row “Ngaio Rewiti-Ashcombe”', page: 'Officials register', by: 'EH', snap: true,
+      msgs: [ { by: 'EH', t: '1 Nov 2026 at 16:05 UTC', b: 'Should Expiring also say the date the position expires on? On a phone I have to open the record to see it.' } ] },
+    { no: 44, type: 'Feature', status: 'progress', anchor: 'resline', el: 'text “Showing 1 to 6 of 757 positions …”', page: 'Officials register', by: 'LK', snap: false,
+      msgs: [ { by: 'LK', t: '31 Oct 2026 at 10:30 UTC', b: 'Please show the number of people on this line on a phone as well. It only shows positions.' },
+              { by: 'RM', t: '31 Oct 2026 at 15:02 UTC', b: 'Agreed. The phone line is being changed to show both figures. I will reply here when it is on staging.' } ] },
+    { no: 45, type: 'Bug', status: 'open', anchor: 'saved-views', gone: true, el: 'button “Saved views”', page: 'Officials register', by: 'EV', snap: true,
+      msgs: [ { by: 'EV', t: '1 Nov 2026 at 08:47 UTC', b: 'Saved views opened an empty menu.' } ] },
+    { no: 29, type: 'Bug', status: 'resolved', anchor: 'h1', el: 'heading “Officials register”', page: 'Officials register', by: 'EV', snap: true,
+      msgs: [ { by: 'EV', t: '28 Oct 2026 at 13:15 UTC', b: 'At 820 the page title runs under the Help button.' },
+              { by: 'RM', t: '29 Oct 2026 at 09:30 UTC', b: 'Fixed: the title now wraps above Help. It is on staging.' },
+              { evt: 'resolved', by: 'EV', t: '29 Oct 2026 at 10:02 UTC' } ] }
+  ];
+  if (kind === 'default' || kind === 'long') base.forEach(r => R.push(r));
+  if (kind === 'onlyresolved') R.push(base[4]);
+  if (kind === 'long') R.push({ no: 47, type: 'Bug', status: 'open', anchor: 'name-cormac', el: 'link “' + LONG.slice(0, 120) + '”', page: 'Officials register', by: 'EV', snap: true,
+      msgs: [ { by: 'EV', t: '2 Nov 2026 at 14:02 UTC', b: LONG } ] });
+  return R;
+}
+const OTHER_MINE = [
+  { no: 36, type: 'Bug', status: 'progress', page: 'Today', by: 'EV', el: 'list “What needs the office”', snap: true, other: true,
+    msgs: [ { by: 'EV', t: '31 Oct 2026 at 08:20 UTC', b: 'Today shows 0 things waiting for a moment before the list arrives.' },
+            { by: 'RM', t: '31 Oct 2026 at 12:10 UTC', b: 'Confirmed. A fix is being made so the list shows its loading rows instead of 0.' } ] },
+  { no: 33, type: 'Question', status: 'open', page: 'Status view', by: 'EV', el: 'the whole page', whole: true, snap: true, other: true,
+    msgs: [ { by: 'EV', t: '30 Oct 2026 at 14:44 UTC', b: 'What does the hatched part of the period bar mean?' } ] }
+];
+
+/* ---------- states ---------- */
+const STATES = [
+  ['idle', 'Idle: 4 reports on this page not yet resolved', {}],
+  ['idle-none', 'Idle: no reports on this page', { data: 'none' }],
+  ['mode', 'Report mode on', { mode: true }],
+  ['mode-hover', 'Report mode: pointer over “Export this list”', { mode: true, hover: 'export' }],
+  ['mode-key', 'Report mode: keyboard highlight on the page heading', { mode: true, hl: 'h1' }],
+  ['selected', 'Part selected: new report', { mode: true, sel: 'export' }],
+  ['selected-tall', 'Part selected, phone keyboard open (sheet fills the screen)', { mode: true, sel: 'export', tall: true, draft: 'The first press opens nothing.' }],
+  ['whole', 'Comment on the whole page', { mode: true, sel: 'page' }],
+  ['invalid', 'New report: comment missing', { mode: true, sel: 'export', compose: 'invalid' }],
+  ['sending', 'Sending', { mode: true, sel: 'export', compose: 'sending', draft: 'The export options open behind the table on my laptop.' }],
+  ['sent', 'Sent', { mode: true, sel: 'export', compose: 'sent', draft: 'The export options open behind the table on my laptop.' }],
+  ['toolarge', 'Sent without the copy of the page (larger than 2 MB)', { mode: true, sel: 'export', compose: 'toolarge', draft: 'The export options open behind the table on my laptop.' }],
+  ['failed', 'Not sent: server error (500)', { mode: true, sel: 'export', compose: 'failed', draft: 'The export options open behind the table on my laptop.' }],
+  ['failed-again', 'Not sent again: Send report failed a second time', { mode: true, sel: 'export', compose: 'failed-again', draft: 'The export options open behind the table on my laptop.' }],
+  ['offline', 'Not sent: no connection', { mode: true, sel: 'export', compose: 'offline', draft: 'The export options open behind the table on my laptop.' }],
+  ['signedout', 'Not sent: sign-in ended (419)', { mode: true, sel: 'export', compose: 'signedout', draft: 'The export options open behind the table on my laptop.' }],
+  ['toolong', 'Not sent: comment over 5,000 characters (422)', { mode: true, sel: 'export', compose: 'toolong', draft: 'The export options open behind the table on my laptop. (5,213 characters in all)' }],
+  ['resolved-shown', 'Pins with “Show resolved pins” ticked', { showResolved: true }],
+  ['thread', 'Thread: answered, a reply waits for you', { panel: 'thread', thread: 41 }],
+  ['thread-other', 'Thread: someone else’s open report', { panel: 'thread', thread: 38 }],
+  ['thread-progress', 'Thread: in progress, no copy of the page', { panel: 'thread', thread: 44 }],
+  ['thread-gone', 'Thread: its part is no longer on the page', { panel: 'thread', thread: 45 }],
+  ['thread-resolved', 'Thread: resolved, with Reopen', { panel: 'thread', thread: 29, showResolved: true }],
+  ['thread-invalid', 'Thread: reply missing', { panel: 'thread', thread: 41, tsub: 'invalid' }],
+  ['thread-failed', 'Thread: reply not sent (500)', { panel: 'thread', thread: 41, tsub: 'failed', reply: 'It still happens on the second page of the list.' }],
+  ['thread-toolong', 'Thread: reply over 5,000 characters (422)', { panel: 'thread', thread: 41, tsub: 'toolong', reply: 'It still happens on the second page of the list. (5,213 characters in all)' }],
+  ['thread-status-failed', 'Thread: Mark as resolved not saved (500)', { panel: 'thread', thread: 38, tsub: 'status-failed' }],
+  ['thread-already', 'Thread: already resolved by someone else first', { panel: 'thread', thread: 38, tsub: 'already', already: true }],
+  ['thread-long', 'Longest values: 200 unbroken characters', { panel: 'thread', thread: 47, data: 'long' }],
+  ['list', 'Reports on this page', { mode: true, panel: 'list', tab: 'page' }],
+  ['list-onlyresolved', 'Reports on this page: only a resolved one', { mode: true, panel: 'list', tab: 'page', data: 'onlyresolved' }],
+  ['list-empty', 'Reports on this page: none yet', { mode: true, panel: 'list', tab: 'page', data: 'none' }],
+  ['list-loading', 'Reports: loading', { mode: true, panel: 'list', tab: 'page', list: 'loading' }],
+  ['list-error', 'Reports: could not be loaded', { mode: true, panel: 'list', tab: 'page', list: 'error' }],
+  ['list-error-again', 'Reports: Try again failed again', { mode: true, panel: 'list', tab: 'page', list: 'error-again' }],
+  ['mine', 'My reports', { mode: true, panel: 'list', tab: 'mine' }],
+  ['mine-empty', 'My reports: none yet', { mode: true, panel: 'list', tab: 'mine', data: 'none', mineNone: true }],
+  ['nav', 'Navigation open, report mode off (below 1024 px)', { nav: true }],
+  ['readonly', 'Read permission only: pins and threads, no reporting', { perm: 'read' }],
+  ['readonly-thread', 'Read permission only: a thread', { perm: 'read', panel: 'thread', thread: 41 }],
+  ['none', 'Without the permission: nothing is rendered', { perm: 'none' }]
+];
+const DEF = { perm: 'full', data: 'default', mineNone: false, mode: false, hover: null, hl: null, sel: null, tall: false, compose: '', draft: '', type: 'Bug',
+  panel: null, tab: 'page', thread: null, tsub: '', reply: '', showResolved: false, list: '', nav: false, show: null, back: false };
+function preset(key) {
+  const p = Object.assign({}, DEF, (STATES.find(s => s[0] === key) || STATES[0])[2]);
+  p.R = dataset(p.data);
+  if (p.already) { const r = p.R.find(x => x.no === 38); r.status = 'resolved'; r.msgs.push({ evt: 'resolved', by: 'LK', t: '2 Nov 2026 at 14:24 UTC' }); }
+  p.mine = p.mineNone ? [] : p.R.filter(r => r.by === ME).concat(OTHER_MINE);
+  return p;
+}
+const unresolved = p => p.R.filter(r => r.status !== 'resolved').length;
+const findR = (p, no) => p.R.find(r => r.no === no) || p.mine.find(r => r.no === no);
+
+/* ---------- the host page (S-101 + S-306, abridged) ---------- */
+const OFFICIALS = [
+  ['Ngaio Rewiti-Ashcombe', 'NZLX901', 'NZL', 'International Umpire', 'warning', '31 Dec 2026', 'ngaio'],
+  ['Uzoamaka Ndibenwa', 'NGRX904', 'NGR', 'International Judge', 'success', '31 Dec 2029', 'uzo'],
+  ['Niamh Tullavin', 'IRLX906', 'IRL', 'International Umpire', 'success', '31 Dec 2028', 'niamh'],
+  ['Nattaya Chaisurin', 'THAX908', 'THA', 'International Umpire', 'warning', '31 Dec 2026', 'nattaya'],
+  ['Cormac Brannaway', 'IRLX910', 'IRL', 'International Race Officer', 'danger', '31 Dec 2025', 'cormac'],
+  ['Ragnhild Tveitnes', 'NORX912', 'NOR', 'International Judge', 'success', '31 Dec 2029', 'ragnhild']
+];
+const OST = { success: ['Current', 'm-check'], warning: ['Expiring', 'n-exclamation-triangle'], danger: ['Lapsed', 'm-x-circle'] };
+const oTag = (t, a) => `<span class="tag tag--${t} tag--sm"${a ? ` data-anchor="${a}"` : ''} data-flux="badge" data-component="status-tag">${ic(OST[t][1])}${OST[t][0]}</span>`;
+const NAV = [
+  ['', [['home', 'Today']]],
+  ['Officials register', [['users', 'Register', true], ['user-plus', 'Add an official record']]],
+  ['Status and renewals', [['arrow-path', 'Status view', false, ['143', '143 positions due for renewal']], ['clock', 'Point-in-time query']]],
+  ['Find an official', [['magnifying-glass', 'Officials search'], ['envelope', 'Message log']]],
+  ['Migration and data', [['circle-stack', 'Replication runs']]],
+  ['Access and audit', [['key', 'Permission groups']]],
+  ['System', [['server-stack', 'System information']]]
+];
+function sidebar(uid) {
+  const groups = NAV.map(([h, items], gi) => {
+    const gid = `ng${gi}-${uid}`;
+    const rows = items.map(([icon, label, cur, cnt]) => `<li><a class="nav-item" href="#"${cur ? ' aria-current="page"' : ''} data-flux="navlist.item">${ic('o-' + icon, 24)}<span class="lbl">${label}</span>${cnt ? `<span class="count-plain"><span aria-hidden="true">${cnt[0]}</span><span class="sr-only">${cnt[1]}</span></span>` : ''}</a></li>`).join('');
+    return `<div class="nav-group">${h ? `<p class="ng-h" id="${gid}">${h}</p>` : ''}<ul${h ? ` aria-labelledby="${gid}"` : ''}>${rows}</ul></div>`;
+  }).join('');
+  return `<nav class="sidebar" id="sb-${uid}" aria-label="Main navigation" data-flux="sidebar">
+    <button type="button" class="btn btn--ghost btn--icon sb-close" aria-label="Close navigation" data-act="nav-close">${ic('m-x-mark')}</button>
+    <div class="sb-brand" data-component="identity-slot"><span class="brand-ws">World Sailing</span><span class="product-name">Race Officials</span></div>
+    <div data-flux="navlist">${groups}</div>
+    <div class="sb-foot"><div class="sb-who" data-flux="profile"><span class="avatar" aria-hidden="true">EV</span><p class="who"><b>Ellis Varnholt</b><span>World Sailing staff, administrator</span></p></div>
+    <div class="nav-group"><ul><li><a class="nav-item" href="#" data-flux="navlist.item">${ic('o-arrow-right-on-rectangle', 24)}<span class="lbl">Sign out</span></a></li></ul></div></div>
+  </nav>`;
+}
+const STAGING = `<div class="banner banner--staging" role="region" aria-label="Staging" data-component="system-banner">${ic('o-server-stack', 24)}<p><b>Staging environment.</b> Emails are not sent from here.</p></div>`;
+const RESLINE = `Showing 1 to 6 of 757 positions (743 people). As at 2 Nov 2026, 09:00 UTC.`;
+function pageDesktop() {
+  const rows = OFFICIALS.map(o => `<tr><td class="nm"><a href="#"${o[6] === 'cormac' ? ' data-anchor="name-cormac"' : ''}>${o[0]}</a></td><td>${o[1]}</td><td>${o[2]}</td><td>${o[3]}</td><td>${oTag(o[4], o[6] === 'ngaio' ? 'tag-ngaio' : '')}</td><td>${o[5]}</td></tr>`).join('');
+  return `${STAGING}
+  <div class="ph" data-component="page-header">
+    <div class="ph-top"><nav class="crumbs" aria-label="Breadcrumb"><ol><li><a href="#">Today</a></li></ol></nav>
+      <button type="button" class="btn btn--ghost btn--sm ph-help" data-flux="button" data-variant="ghost">${ic('o-question-mark-circle', 24)}Help</button></div>
+    <h1 class="t-page" data-anchor="h1">Officials register</h1>
+    <p class="ph-lead">Every official's positions, with their status and reapply date.</p>
+    <div class="ph-acts"><button type="button" class="btn btn--outline" data-anchor="export" data-flux="button" data-variant="outline">${ic('o-arrow-down-tray', 24)}Export this list</button></div>
+  </div>
+  <p class="resline" role="status" data-anchor="resline">${RESLINE}</p>
+  <div class="tcard"><div class="tscroll" tabindex="0" role="region" aria-labelledby="cap"><table class="reg" data-flux="table">
+    <caption id="cap">Officials register: 6 of 757 positions shown</caption>
+    <thead><tr><th scope="col">Name</th><th scope="col">Member ID</th><th scope="col">Country</th><th scope="col">Position</th><th scope="col">Status</th><th scope="col">Reapply by</th></tr></thead>
+    <tbody>${rows}</tbody></table></div></div>`;
+}
+function pagePhone() {
+  const rows = OFFICIALS.map(o => `<li><a class="rrow" href="#"><span class="nm"${o[6] === 'cormac' ? ' data-anchor="name-cormac"' : ''}>${o[0]}</span><span class="stat">${oTag(o[4], o[6] === 'ngaio' ? 'tag-ngaio' : '')}</span><span class="l2">${o[3]}</span><span class="l3"><span><span class="sr-only">Member ID </span>${o[1]}</span><span><span class="sr-only">Country </span>${o[2]}</span><span>Reapply by ${o[5]}</span></span></a></li>`).join('');
+  return `<div class="p-head">${STAGING}<h1 class="p-h1" data-anchor="h1">Officials register</h1>
+    <p class="ph-lead">Every official's positions, with their status and reapply date.</p>
+    <div class="ph-acts"><button type="button" class="btn btn--outline" data-anchor="export" data-flux="button" data-variant="outline">${ic('o-arrow-down-tray', 24)}Export this list</button></div>
+    <p class="resline" role="status" data-anchor="resline">${RESLINE}</p></div>
+    <ul class="rows" role="list" aria-label="Positions">${rows}</ul>`;
+}
+
+/* ---------- the widget ---------- */
+function reportBtn(p, w, uid) {
+  if (p.perm === 'none') return '';
+  const n = unresolved(p);
+  const pill = n ? `<span class="cpill" aria-hidden="true">${n}</span>` : '';
+  const what = n ? `${n} ${n === 1 ? 'report' : 'reports'} on this page not yet resolved` : 'no reports on this page';
+  const ro = p.perm === 'read';
+  const word = ro ? 'Reports' : 'Report';
+  const pressed = ro ? '' : ` aria-pressed="${p.mode ? 'true' : 'false'}"`;
+  if (w >= 1024) return `<button type="button" class="btn rw-fab" data-rw="report" data-act="report"${pressed} data-component="report-button">${ic('o-chat', 24)}${word}${pill}<span class="sr-only">, ${what}</span></button>`;
+  return `<button type="button" class="btn btn--ghost rw-barbtn" data-rw="report" data-act="report"${pressed} aria-label="${word}, ${what}" data-component="report-button">${ic('o-chat', 24)}<span class="rw-word">${word}</span>${pill}</button>`;
+}
+function modeBar(p, w) {
+  const n = unresolved(p);
+  const phone = w < 640;
+  const pill = n ? `<span class="sr-only">, </span><span class="cpill">${n}</span>` : '';
+  return `<div class="rw-modebar" data-rw="modebar" role="region" aria-label="Report mode" data-component="report-mode-bar">
+    <div class="mb-text">${ic('n-cursor', 20)}<p class="mb-h">${phone ? 'Report mode: tap any part of the page to report on it.' : 'Report mode: select any part of the page to report on it. Nothing on the page works until you leave.'}</p>
+      <p class="mb-k">Tab or the arrow keys move the outline, Enter chooses, Esc leaves report mode.</p></div>
+    <div class="mb-acts">
+      <button type="button" class="btn btn--outline btn--sm" data-act="whole" data-flux="button" data-variant="outline">${phone ? '<span aria-hidden="true">Whole page</span><span class="sr-only">Comment on the whole page</span>' : 'Comment on the whole page'}</button>
+      <button type="button" class="btn btn--outline btn--sm" data-act="list" aria-haspopup="dialog" data-flux="button" data-variant="outline">Reports${pill}</button>
+      <button type="button" class="btn btn--outline btn--sm" data-act="done" data-flux="button" data-variant="outline">Done</button>
+    </div></div>`;
+}
+const about = (p, r) => r ? (r.whole ? 'the whole page' : r.el) : (p.sel === 'page' ? 'the whole page' : (p.selName || ''));
+function composePanel(p, w) {
+  const phone = w < 640;
+  const cls = `rw-pop${phone ? ' is-sheet' : ''}${phone && p.tall ? ' is-tall' : ''}`;
+  const head = (title) => `<div class="pop-hd"><div class="ht"><h2 id="rw-ph" tabindex="-1">${title}</h2><p class="about">About: ${esc(about(p))}</p></div>
+    <button type="button" class="btn btn--ghost btn--icon" aria-label="Close" data-act="cancel" data-flux="button" data-variant="ghost">${ic('m-x-mark')}</button></div>`;
+  const sentLike = p.compose === 'sent' || p.compose === 'toolarge';
+  if (sentLike) {
+    const no = p.newNo || 46;
+    const body = p.compose === 'sent'
+      ? `<div class="callout callout--success" role="status" data-flux="callout" data-variant="success">${ic('n-check', 20)}<p class="c-h">Report ${no} sent</p><p>It is pinned on this page as ${no}. Replies appear in its thread and under My reports.</p></div>`
+      : `<div class="callout callout--warning" role="status" data-flux="callout" data-variant="warning">${ic('n-exclamation-triangle', 20)}<p class="c-h">Report ${no} sent, without a copy of the page</p><p>The page was larger than 2 MB, so the copy was left out. Your comment, the address, the screen size and the part you chose were sent. If the copy would have shown something, describe it in a reply.</p></div>`;
+    return `<div class="${cls}" role="dialog" aria-modal="true" aria-labelledby="rw-ph" data-rw="compose" data-flux="modal" data-component="report-compose">${head('New report')}
+      <div class="pop-bd">${body}</div>
+      <div class="pop-ft"><button type="button" class="btn btn--primary" data-act="sent-close" data-flux="button" data-variant="primary">Close</button>
+      <button type="button" class="btn btn--outline" data-act="open-new" data-flux="button" data-variant="outline">Open the thread</button></div></div>`;
+  }
+  const invalid = p.compose === 'invalid';
+  const failCopy = {
+    failed: ['Your report was not sent', 'Something went wrong on the server. Your comment is still here. Press Send report to try again. If it fails again, send reference RPT-7K2Q to the system team.'],
+    'failed-again': ['Your report was still not sent', 'Something went wrong on the server again. Your comment is still here. Send reference RPT-7K3A to the system team, and try again later.'],
+    offline: ['Your report was not sent', 'There is no connection. Your comment is still here. Press Send report when you are back online.'],
+    signedout: ['Your report was not sent', 'Your sign-in has ended. Your comment is still here. Sign in again in a new tab, then come back to this tab and press Send report.']
+  }[p.compose];
+  const fail = failCopy ? `<div class="callout callout--danger" role="alert" data-flux="callout" data-variant="danger">${ic('n-x-circle', 20)}<p class="c-h">${failCopy[0]}</p><p>${failCopy[1]}</p>${p.compose === 'signedout' ? '<p><a href="https://staging.example.org/sign-in" target="_blank" rel="noopener">Sign in again (opens a new tab)</a></p>' : ''}</div>` : '';
+  const toolong = p.compose === 'toolong';
+  const sum = (invalid || toolong) ? `<div class="errsum" role="group" aria-labelledby="rw-es-h" tabindex="-1" id="rw-es" data-component="error-summary"><h3 id="rw-es-h">There is a problem</h3><ul><li><a href="#rw-ta" data-act="to-field">${invalid ? 'Enter your comment' : 'Your comment is 5,213 characters. Shorten it to 5,000 or fewer.'}</a></li></ul></div>` : '';
+  const sending = p.compose === 'sending';
+  const types = ['Bug', 'Feature', 'Question'].map(t => `<label><input type="radio" name="rw-type" value="${t}"${p.type === t ? ' checked' : ''} data-act="type">${t}</label>`).join('');
+  return `<div class="${cls}" role="dialog" aria-modal="true" aria-labelledby="rw-ph" data-rw="compose" data-flux="modal" data-component="report-compose"${sending ? ' aria-busy="true"' : ''}>${head(invalid || toolong ? 'New report' : 'New report')}
+    <div class="pop-bd">${fail}${sum}
+      <fieldset><legend class="legend">Type</legend><div class="segc" data-flux="radio.group" data-variant="segmented">${types}</div></fieldset>
+      <div class="fld${invalid || toolong ? ' is-invalid' : ''}"><label class="lab" for="rw-ta">Comment</label><span class="hint" id="rw-hint">Say what you expected and what you saw.</span>
+        ${invalid ? `<p class="err-msg" id="rw-err">${ic('n-exclamation-triangle')}Enter your comment</p>` : ''}${toolong ? `<p class="err-msg" id="rw-err">${ic('n-exclamation-triangle')}Your comment is 5,213 characters. Shorten it to 5,000 or fewer.</p>` : ''}
+        <textarea class="ta" id="rw-ta" rows="4" aria-describedby="rw-hint${invalid || toolong ? ' rw-err' : ''}"${invalid || toolong ? ' aria-invalid="true"' : ''} data-flux="textarea">${esc(p.draft)}</textarea></div>
+      <p class="note">A copy of this page as you see it is sent with your report, with password fields left blank.</p>
+    </div>
+    <div class="pop-ft"><button type="button" class="btn btn--primary" data-act="send" data-flux="button" data-variant="primary">${sending ? '<span class="spin" aria-hidden="true"></span>Sending…' : 'Send report'}</button>
+      <button type="button" class="btn btn--outline" data-act="cancel" data-flux="button" data-variant="outline">Cancel</button></div></div>`;
+}
+function statusSentence(p, r) {
+  if (r.status === 'open') return 'Open: not yet answered.';
+  if (r.status === 'answered') return r.by === ME ? 'Answered: a reply is waiting for you.' : `Answered: a reply is waiting for ${PEOPLE[r.by].n}.`;
+  if (r.status === 'progress') return 'In progress: a fix is being made.';
+  const ev = r.msgs.slice().reverse().find(m => m.evt === 'resolved');
+  return (ev ? `Resolved by ${PEOPLE[ev.by].n} on ${ev.t}.` : 'Resolved.') + ' Its pin shows only when Show resolved pins is ticked.';
+}
+const evtText = m => m.evt === 'resolved' ? `${PEOPLE[m.by].n} marked this report resolved on ${m.t}.` : `${PEOPLE[m.by].n} reopened this report on ${m.t}.`;
+function threadPanel(p, w) {
+  const r = findR(p, p.thread);
+  if (!r) return '';
+  const ro = p.perm === 'read';
+  const msgs = r.msgs.map(m => m.evt
+    ? `<li class="msg evt">${esc(evtText(m))}</li>`
+    : `<li class="msg"><span class="avatar" aria-hidden="true">${PEOPLE[m.by].av}</span><p class="by"><b>${esc(PEOPLE[m.by].n)}</b><span>${m.t}</span></p><p class="body">${esc(m.b)}</p></li>`).join('');
+  let aboutLine;
+  if (r.gone) aboutLine = `<p>About: ${esc(r.el)}, which is no longer on this page. The report is kept as a report on the whole page.</p>`;
+  else if (r.whole) aboutLine = `<p>About: the whole page.</p>`;
+  else if (r.other) aboutLine = `<p>About: ${esc(r.el)} on ${esc(r.page)}. <a href="#" data-act="goto" data-page="${esc(r.page)}" data-no="${r.no}">Go to ${esc(r.page)}</a></p>`;
+  else aboutLine = `<p>About: ${esc(r.el)}. <button type="button" class="linkbtn" data-act="show" data-no="${r.no}">Show on the page</button></p>`;
+  const snap = r.snap ? '<p>A copy of the page was sent with the report.</p>' : '<p>Sent without a copy of the page: it was larger than 2 MB.</p>';
+  const toolong = p.tsub === 'toolong';
+  const invalid = p.tsub === 'invalid' || toolong;
+  const failed = p.tsub === 'failed';
+  const errWords = toolong ? 'Your reply is 5,213 characters. Shorten it to 5,000 or fewer.' : 'Enter your reply';
+  const statusFail = p.tsub === 'status-failed' ? `<div class="callout callout--danger" role="alert" data-flux="callout" data-variant="danger">${ic('n-x-circle', 20)}<p class="c-h">The change was not saved</p><p>Something went wrong on the server. Nothing has changed. Try again. If it fails again, send reference RPT-4R2B to the system team.</p></div>` : '';
+  const already = p.tsub === 'already' ? `<div class="callout callout--info" role="status" data-flux="callout" data-variant="info">${ic('n-information-circle', 20)}<p class="c-h">Report ${r.no} was already resolved by ${esc(PEOPLE[(r.msgs.slice().reverse().find(m => m.evt) || { by: 'LK' }).by].n)}</p><p>Nothing more was changed. Reopen it if it is not done.</p></div>` : '';
+  const done = p.tsub === 'sent' ? `<div class="callout callout--success" role="status" data-flux="callout" data-variant="success">${ic('n-check', 20)}<p class="c-h">Reply sent</p>${p.reopened ? `<p>Report ${r.no} is open again until it is answered.</p>` : ''}</div>`
+    : p.tsub === 'resolved-now' ? `<div class="callout callout--success" role="status" data-flux="callout" data-variant="success">${ic('n-check', 20)}<p class="c-h">Report ${r.no} is resolved</p><p>Its pin is hidden. Tick Show resolved pins to see it.</p></div>`
+    : p.tsub === 'reopened' ? `<div class="callout callout--success" role="status" data-flux="callout" data-variant="success">${ic('n-check', 20)}<p class="c-h">Report ${r.no} is open again</p><p>Its pin is back on the page.</p></div>` : '';
+  const form = ro ? `<p class="hint">You can read reports, but not send or answer them.</p>` : `<hr class="divider">
+    ${failed ? `<div class="callout callout--danger" role="alert" data-flux="callout" data-variant="danger">${ic('n-x-circle', 20)}<p class="c-h">Your reply was not sent</p><p>Something went wrong on the server. Your reply is still here. Press Send reply to try again. If it fails again, send reference RPT-3M8D to the system team.</p></div>` : ''}
+    ${invalid ? `<div class="errsum" role="group" aria-labelledby="rw-res-h" tabindex="-1" id="rw-res" data-component="error-summary"><h3 id="rw-res-h">There is a problem</h3><ul><li><a href="#rw-rta" data-act="to-reply">${errWords}</a></li></ul></div>` : ''}
+    <div class="fld${invalid ? ' is-invalid' : ''}"><label class="lab" for="rw-rta">Your reply</label>${invalid ? `<p class="err-msg" id="rw-rerr">${ic('n-exclamation-triangle')}${errWords}</p>` : ''}
+      <textarea class="ta" id="rw-rta" rows="3"${invalid ? ' aria-invalid="true" aria-describedby="rw-rerr"' : ''} data-flux="textarea">${esc(p.reply)}</textarea></div>
+    <div class="acts"><button type="button" class="btn btn--primary" data-act="reply" data-flux="button" data-variant="primary">Send reply</button>
+      ${r.status === 'resolved' ? `<button type="button" class="btn btn--outline" data-act="reopen" data-flux="button" data-variant="outline">Reopen</button>` : `<button type="button" class="btn btn--outline" data-act="resolve" data-flux="button" data-variant="outline">Mark as resolved</button>`}</div>`;
+  return `<div class="rw-fly" role="dialog" aria-modal="true" aria-labelledby="rw-th" data-rw="thread" data-flux="modal" data-variant="flyout" data-component="report-thread">
+    <div class="fly-hd"><div class="ht">${p.back ? `<button type="button" class="linkbtn" data-act="back">${ic('m-chevron-left')}All reports</button>` : ''}<h2 id="rw-th" tabindex="-1">Report ${r.no}</h2>
+      <p class="sub">${r.type} · ${esc(r.page)} · sent by ${esc(PEOPLE[r.by].n)}</p><p>${statusTag(r.status)}</p></div>
+      <button type="button" class="btn btn--ghost btn--icon" aria-label="Close" data-act="close" data-flux="button" data-variant="ghost">${ic('m-x-mark')}</button></div>
+    <div class="fly-bd">${done}${statusFail}${already}
+      <div class="facts"><p><b>${statusSentence(p, r)}</b></p>${aboutLine}${snap}</div>
+      <h3>Messages</h3><ol class="msgs">${msgs}</ol>${form}</div></div>`;
+}
+function listPanel(p, w) {
+  const R = p.R, mine = p.mine;
+  const unres = unresolved(p), resolvedN = R.length - unres;
+  const tab = (k, label, n) => `<button type="button" class="tab" role="tab" id="rw-tab-${k}" aria-selected="${p.tab === k}" aria-controls="rw-tp" tabindex="${p.tab === k ? 0 : -1}" data-act="tab" data-tab="${k}" data-flux="tab">${label}${n ? `<span class="sr-only">, </span><span class="cpill">${n}</span>` : ''}</button>`;
+  const row = (r, mineTab) => `<li><button type="button" class="rw-row" data-act="open" data-no="${r.no}"><span class="nm">Report ${r.no}</span><span class="stat">${statusTag(r.status, true)}</span>
+    <span class="ex">${esc(r.msgs[0].b)}</span>
+    <span class="meta">${mineTab ? esc(r.page) + ' · ' : ''}${r.type} · ${r.gone ? 'on the whole page (' + esc(r.el) + ' is no longer here)' : r.whole ? 'on the whole page' : 'on ' + esc(r.el)}${mineTab ? '' : ' · ' + esc(PEOPLE[r.by].n)} · ${r.msgs[0].t.replace(/ at .*/, '')}</span></button></li>`;
+  let body;
+  if (p.list === 'loading') body = `<p class="resline" role="status">Loading the reports</p><ul class="rw-rows" aria-busy="true">${[1, 2, 3].map(() => '<li class="rw-skel"><span class="skel" style="width:40%"></span><span class="skel" style="width:90%"></span><span class="skel" style="width:60%"></span></li>').join('')}</ul>`;
+  else if (p.list === 'error' || p.list === 'error-again') {
+    const again = p.list === 'error-again';
+    body = `<div class="err-panel" role="alert" aria-labelledby="rw-eh" data-component="error-panel"><p class="h" id="rw-eh">${ic('n-x-circle', 20)}${again ? 'Error: the reports still could not be loaded' : 'The reports could not be loaded'}</p>
+      <p>Nothing has changed. ${again ? 'Send reference RPT-5C1E to the system team, and try again later.' : 'Try again. If it fails again, send reference RPT-5C1D to the system team.'}</p>
+      <button type="button" class="btn btn--outline" data-act="retry" data-flux="button" data-variant="outline">Try again</button></div>`;
+  } else if (p.tab === 'page') {
+    const tickN = R.filter(r => r.status === 'resolved').length;
+    const tick = `<label class="tick"><input type="checkbox" data-act="resolved"${p.showResolved ? ' checked' : ''} data-flux="checkbox">Show resolved pins</label>`;
+    if (!R.length) body = p.perm === 'read'
+      ? `<div class="empty" data-component="empty-state"><p class="h">No reports on this page yet</p><p>Reports people send from this page appear here, with their replies.</p></div>`
+      : `${tick}<div class="empty" data-component="empty-state"><p class="h">No reports on this page yet</p><p>Choose any part of the page while report mode is on, or comment on the whole page.</p>
+      <button type="button" class="btn btn--outline" data-act="whole-from-list" data-flux="button" data-variant="outline">Comment on the whole page</button></div>`;
+    else {
+      const line = `${R.length} ${R.length === 1 ? 'report' : 'reports'} on Officials register: ${unres} not yet resolved, ${resolvedN} resolved${resolvedN && !p.showResolved ? (resolvedN === 1 ? ' (its pin is hidden)' : ' (their pins are hidden)') : ''}. As at 2 Nov 2026, 14:20 UTC.`;
+      const order = R.slice().sort((a, b) => (a.status === 'resolved') - (b.status === 'resolved') || b.no - a.no);
+      body = `${tick}<p class="resline" role="status">${line}</p>${!unres ? `<p>Every report on this page is resolved. Their pins show when Show resolved pins is ticked.</p>` : ''}<ul class="rw-rows" role="list" aria-label="Reports on this page">${order.map(r => row(r, false)).join('')}</ul>`;
+    }
+  } else {
+    if (!mine.length) body = `<div class="empty" data-component="empty-state"><p class="h">You have not sent any reports yet</p><p>Reports you send from any page are listed here, with their replies. Choose any part of a page while report mode is on to send one.</p></div>`;
+    else {
+      const pages = new Set(mine.map(r => r.page)).size;
+      body = `<p class="resline" role="status">${mine.length} ${mine.length === 1 ? 'report' : 'reports'} you sent, on ${pages} ${pages === 1 ? 'page' : 'pages'}. As at 2 Nov 2026, 14:20 UTC.</p><ul class="rw-rows" role="list" aria-label="My reports">${mine.slice().sort((a, b) => (a.status === 'resolved') - (b.status === 'resolved') || b.no - a.no).map(r => row(r, true)).join('')}</ul>`;
+    }
+  }
+  return `<div class="rw-fly" role="dialog" aria-modal="true" aria-labelledby="rw-lh" data-rw="list" data-flux="modal" data-variant="flyout" data-component="report-list">
+    <div class="fly-hd"><div class="ht"><h2 id="rw-lh" tabindex="-1">Reports</h2></div>
+      <button type="button" class="btn btn--ghost btn--icon" aria-label="Close" data-act="close" data-flux="button" data-variant="ghost">${ic('m-x-mark')}</button></div>
+    <div class="tabs" role="tablist" aria-label="Which reports" data-flux="tabs">${tab('page', 'This page', R.length)}${tab('mine', 'My reports', mine.length)}</div>
+    <div class="fly-bd" role="tabpanel" id="rw-tp" aria-labelledby="rw-tab-${p.tab}">${body}</div></div>`;
+}
+
+/* ---------- one frame ---------- */
+function frame(p, w, uid) {
+  const phone = w < 640, bar = w < 1024;
+  const overlay = !!(p.sel || p.panel);
+  const app = ['app', phone ? 'ph-mode' : '', p.nav ? 'nav-open' : '', p.perm === 'none' ? '' : 'has-rw'].join(' ');
+  const helpBtn = `<button type="button" class="btn btn--ghost btn--icon" aria-label="Help" data-flux="button" data-variant="ghost">${ic('o-question-mark-circle', 24)}</button>`;
+  const appBar = bar ? `<header class="phone-bar" data-flux="header"${overlay ? ' inert' : ''}><button type="button" class="btn btn--ghost btn--icon" aria-label="Open navigation" aria-expanded="${p.nav}" data-act="nav" data-flux="sidebar.toggle">${ic('o-bars-3', 24)}</button>
+    <p class="product-name">Race Officials</p>${p.perm !== 'none' ? reportBtn(p, w, uid) : ''}${helpBtn}</header>` : '';
+  const fab = w >= 1024 ? reportBtn(p, w, uid).replace('<button ', overlay ? '<button inert ' : '<button ') : '';
+  const layer = p.perm === 'none' ? '' : `<div class="rw-layer" data-rw="layer">${fab}<div class="rw-boxes"></div>
+    ${overlay ? '<div class="rw-scrim" data-act="scrim"></div>' : ''}${p.sel ? composePanel(p, w) : ''}${p.panel === 'thread' ? threadPanel(p, w) : ''}${p.panel === 'list' ? listPanel(p, w) : ''}</div>`;
+  return `<div class="${app}" id="app-${uid}">${appBar}
+    <div class="shell"${overlay ? ' inert' : ''}>${sidebar(uid)}<div class="scrim" data-act="nav-close"></div>
+      <div class="col">${p.mode && p.perm === 'full' ? modeBar(p, w) : ''}
+        <main class="main" id="main-${uid}" tabindex="-1"><div class="page" data-flux="main">${phone ? pagePhone() : pageDesktop()}${p.perm === 'none' ? '' : '<div class="rw-pins" data-rw="pins"></div>'}</div></main>
+      </div></div>${layer}</div>`;
+}
+
+/* ---------- geometry: pins, outlines, popover position ---------- */
+const SELECTABLE = 'a,button,input,select,textarea,h1,h2,h3,p,li,td,th,caption,.tag,label,nav,header,[data-anchor]';
+function readable(el) {
+  const role = el.matches('h1,h2,h3') ? 'heading' : el.matches('a') || el.closest('a') === el ? 'link' : el.matches('button') ? 'button' : el.matches('.tag') ? 'tag' : el.matches('td') ? 'cell' : el.matches('th') ? 'column header' : el.matches('li') ? 'list item' : el.matches('caption') ? 'table caption' : el.matches('nav') ? 'navigation' : el.matches('header') ? 'app bar' : el.matches('input,select,textarea') ? 'field' : 'text';
+  let t = (el.getAttribute('aria-label') || el.textContent || '').replace(/\s+/g, ' ').trim();
+  if (t.length > 60) t = t.slice(0, 60).trim() + ' …';
+  return `${role} “${t}”`;
+}
+function candidates(root) {
+  const app = $(root, '.app');
+  return $$(app, SELECTABLE).filter(el => !el.closest('[data-rw]') && el.getClientRects().length);
+}
+function rel(el, to) { const a = el.getBoundingClientRect(), b = to.getBoundingClientRect(); return { x: a.left - b.left, y: a.top - b.top, w: a.width, h: a.height }; }
+function resolveEl(root, key) {
+  if (!key || key === 'page') return null;
+  if (typeof key === 'string' && key.startsWith('sid:')) return $(root, `[data-sid="${key.slice(4)}"]`);
+  return $(root, `.page [data-anchor="${key}"]`);
+}
+function box(root, el, kind) {
+  const app = $(root, '.app'); const r = rel(el, app);
+  const main = $(root, '.main'); const m = rel(main, app);
+  if (r.y + r.h < m.y || r.y > m.y + m.h) return '';
+  const below = r.y - m.y < 30;
+  return `<div class="rw-box ${kind}${below ? ' lbl-below' : ''}" style="left:${r.x - 3}px;top:${r.y - 3}px;width:${r.w + 6}px;height:${r.h + 6}px"><span class="rw-lbl">${esc(readable(el))}</span></div>`;
+}
+function post(root, p, w, liveFrame) {
+  if (p.perm === 'none') return;
+  // stable ids on every selectable part, in DOM order
+  let sid = 0;
+  $$($(root, '.app'), SELECTABLE).forEach(el => { if (!el.closest('[data-rw]')) el.dataset.sid = sid++; });
+  const page = $(root, '.page'), pins = $(root, '.rw-pins');
+  if (page && pins) {
+    /* two pins never overlap: a pin that would land on one already placed
+       moves 40px towards the inline start, so several reports on one part sit
+       side by side, oldest at the end (each stays a whole 28px target) */
+    const placed = [];
+    pins.innerHTML = p.R.filter(r => !r.gone && (r.status !== 'resolved' || p.showResolved)).sort((a, b) => a.no - b.no).map(r => {
+      const el = resolveEl(root, r.anchor); if (!el) return '';
+      const g = rel(el, page);
+      /* the pin straddles the part's top-end corner, covering at most 10px of
+         it (padding, never text); where the page edge would push it back over
+         the part, it sits wholly above the part instead */
+      const PW = 50; let x = g.x + g.w - 10, y = g.y - 18;
+      if (x + PW > page.clientWidth - 4) { x = page.clientWidth - PW - 4; y = g.y - 30; }
+      y = Math.max(4, y);
+      while (placed.some(q => Math.abs(q.x - x) < 40 && Math.abs(q.y - y) < 30)) x -= 40;
+      x = Math.max(4, x); placed.push({ x, y });
+      const label = `Report ${r.no}, ${STATUS[r.status].w}, ${r.type}, about ${r.el}`;
+      return `<button type="button" class="rw-pin st-${r.status}${p.show === r.no ? ' is-shown' : ''}" style="left:${x}px;top:${y}px" data-rw="pin" data-act="pin" data-no="${r.no}" aria-label="${esc(label)}" data-component="report-pin">${ic(STATUS[r.status].icon)}${r.no}</button>`;
+    }).join('');
+  }
+  drawBoxes(root, p);
+  const pop = $(root, '.rw-pop:not(.is-sheet)');
+  const main = $(root, '.main');
+  if (p.sel && p.sel !== 'page') {
+    const el = resolveEl(root, p.sel);
+    if (el) {
+      p.selName = readable(el);
+      const ab = $(root, '.rw-pop .about'); if (ab) ab.textContent = 'About: ' + p.selName;
+      if (w < 640 && !p.tall) { // bring the part into view above the sheet
+        const sheet = $(root, '.rw-pop');
+        const e = el.getBoundingClientRect(), m = main.getBoundingClientRect();
+        const bottom = sheet ? Math.min(m.bottom, sheet.getBoundingClientRect().top) : m.bottom;
+        if (e.top < m.top + 8 || e.bottom > bottom - 8) main.scrollTop += e.top - m.top - 32;
+        drawBoxes(root, p);
+      }
+    }
+  }
+  if (pop) {
+    const app = $(root, '.app'), A = app.getBoundingClientRect();
+    const el = p.sel && p.sel !== 'page' ? resolveEl(root, p.sel) : null;
+    const pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x, y;
+    if (el) {
+      const r = rel(el, app);
+      x = Math.max(16, Math.min(r.x, A.width - pw - 16));
+      y = r.y + r.h + 12;
+      if (y + ph > A.height - 16) y = r.y - ph - 12;
+      if (y < 16) y = Math.max(16, A.height - ph - 16);
+    } else { x = A.width - pw - 24; y = Math.max(16, (A.height - ph) / 2); }
+    pop.style.left = x + 'px'; pop.style.top = y + 'px';
+  }
+}
+function drawBoxes(root, p) {
+  const host = $(root, '.rw-boxes'); if (!host) return;
+  let h = '';
+  const sel = p.sel && p.sel !== 'page' ? resolveEl(root, p.sel) : null;
+  const show = p.show ? resolveEl(root, (findR(p, p.show) || {}).anchor) : null;
+  const hv = p.hover ? resolveEl(root, p.hover) : null;
+  const hl = p.hl ? resolveEl(root, p.hl) : null;
+  if (sel) h += box(root, sel, 'is-sel');
+  else if (show) h += box(root, show, 'is-sel');
+  if (!sel && hl) h += box(root, hl, 'is-key');
+  if (!sel && hv && hv !== hl) h += box(root, hv, '');
+  host.innerHTML = h;
+}
+
+/* ---------- the phone gallery (drawn first) ---------- */
+const GALLERY = [
+  ['idle', 'Idle', 'Report in the app bar with the neutral count; pins 41, 38 and 44 on the page.'],
+  ['mode', 'Report mode on', 'The mode bar pushes the page down; Whole page, Reports and Done at 44 px.'],
+  ['selected', 'Part selected', 'Bottom sheet; the chosen button stays in view, outlined and named.'],
+  ['selected-tall', 'Keyboard open', 'The sheet fills the screen; "About" keeps the part in words.'],
+  ['invalid', 'Comment missing', 'There is a problem, the 4px bar, the message above the field.'],
+  ['sent', 'Sent', 'Success callout in the sheet; report mode stays on.'],
+  ['toolarge', 'Sent without the copy', 'Warning callout: what was and was not sent.'],
+  ['failed', 'Not sent (500)', 'Danger callout, the comment kept, a reference.'],
+  ['offline', 'Not sent (no connection)', 'No reference: the service was never reached.'],
+  ['signedout', 'Sign-in ended', 'Sign in again in a new tab; the comment stays here.'],
+  ['thread', 'Thread', 'Full-height sheet: status in words, messages, reply, Mark as resolved.'],
+  ['thread-gone', 'Part gone', 'Kept as a report on the whole page.'],
+  ['list', 'Reports on this page', 'Rows at 95 px; Show resolved pins; result line with as-at.'],
+  ['mine', 'My reports', 'Across pages: the page name leads line 3.'],
+  ['list-empty', 'None on this page', 'Why it is empty and the next action.'],
+  ['mine-empty', 'None sent yet', 'What appears here and how to send one.'],
+  ['readonly', 'Read permission only', '"Reports" opens the list; no report mode.'],
+  ['none', 'Without the permission', 'Nothing rendered: no control, pin or markup.']
+];
+function drawGallery() {
+  const grid = document.getElementById('pf-grid');
+  grid.innerHTML = GALLERY.map(([k, t, c], i) => `<figure class="pf-one"><div class="dev"><div class="vp" id="g-${i}" style="--vp-w:390px"></div></div><figcaption><b>${t}</b>${c}</figcaption></figure>`).join('');
+  GALLERY.forEach(([k], i) => { const vp = document.getElementById('g-' + i); const p = preset(k); vp.innerHTML = frame(p, 390, 'g' + i); post(vp, p, 390, false); });
+}
+
+/* ---------- the live frame ---------- */
+const stage = document.getElementById('stage'), dev = document.getElementById('dev'), vp = document.getElementById('vp');
+const sel = document.getElementById('state');
+sel.innerHTML = STATES.map(s => `<option value="${s[0]}">${s[1]}</option>`).join('');
+let W = 1280, P = preset('idle'), focusAfter = null, timer = null, nextNo = 46;
+function render() {
+  const main0 = $(vp, '.main'); const st = main0 ? main0.scrollTop : 0;
+  stage.classList.toggle('is-phone', W < 640);
+  vp.style.setProperty('--vp-w', W + 'px');
+  vp.innerHTML = frame(P, W, 'L');
+  const main = $(vp, '.main'); if (main) { main.scrollTop = st; main.addEventListener('scroll', () => drawBoxes(vp, P)); }
+  post(vp, P, W, true);
+  if (focusAfter) { const f = typeof focusAfter === 'function' ? focusAfter() : $(vp, focusAfter); if (f) f.focus({ preventScroll: true }); focusAfter = null; }
+}
+function setState(k) { clearTimeout(timer); P = preset(k); nextNo = 46; render(); }
+sel.addEventListener('change', () => setState(sel.value));
+document.querySelectorAll('input[name=vp]').forEach(r => r.addEventListener('change', () => { W = +r.value; render(); }));
+
+function enterMode() { P.mode = true; P.hover = P.hl = null; P.show = null; focusAfter = '[data-act=report]'; render(); say('Report mode is on. Select any part of the page to report on it.'); }
+function leaveMode() { Object.assign(P, { mode: false, hover: null, hl: null, sel: null, compose: '', panel: null, show: null }); focusAfter = '[data-act=report]'; render(); say('Report mode is off.'); }
+function openCompose(key) {
+  Object.assign(P, { sel: key, compose: '', draft: '', type: 'Bug', tall: false, hover: null });
+  focusAfter = '#rw-ph'; render(); say(key === 'page' ? 'New report about the whole page.' : 'New report about ' + (P.selName || 'the part you chose') + '.');
+}
+/* focus returns to the part the panel was opened on (tabindex -1 if it has
+   none), or to "Comment on the whole page" when it was the whole page */
+function closeCompose() {
+  const k = P.sel; Object.assign(P, { sel: null, compose: '' });
+  if (k && k !== 'page') P.hl = k;
+  focusAfter = () => { const el = resolveEl(vp, k); if (!el) return $(vp, '[data-act=whole]'); if (!el.matches('a[href],button,input,select,textarea,[tabindex]')) el.setAttribute('tabindex', '-1'); return el; };
+  render();
+}
+function openPanel(kind, extra) { Object.assign(P, { panel: kind, tsub: '', reply: '' }, extra || {}); focusAfter = kind === 'thread' ? '#rw-th' : '#rw-lh'; render(); }
+function closePanel() {
+  const was = P.panel, no = P.thread; Object.assign(P, { panel: null, tsub: '', back: false });
+  focusAfter = was === 'thread' && $(vp, `.rw-pin[data-no="${no}"]`) ? `.rw-pin[data-no="${no}"]` : (P.mode ? '[data-act=list]' : '[data-act=report]');
+  render();
+}
+
+/* the capture layer: while report mode is on and no panel is open, nothing on
+   the page runs; a press chooses the part instead (design.md §3) */
+function inWidget(t) { return !!t.closest('[data-rw]'); }
+function pagePart(t) { const el = t.closest(SELECTABLE); return el && $(vp, '.app').contains(el) && !inWidget(el) ? el : null; }
+['click', 'auxclick', 'submit', 'pointerdown', 'mousedown', 'dragstart'].forEach(type => vp.addEventListener(type, e => {
+  if (!P.mode || P.perm !== 'full' || inWidget(e.target)) return;
+  e.preventDefault(); e.stopPropagation();
+  if (type === 'click' && !P.sel && !P.panel) { const el = pagePart(e.target); if (el) openCompose('sid:' + el.dataset.sid); }
+}, true));
+vp.addEventListener('pointermove', e => {
+  if (!P.mode || P.sel || P.panel || inWidget(e.target)) return;
+  const el = pagePart(e.target); const k = el ? 'sid:' + el.dataset.sid : null;
+  if (k !== P.hover) { P.hover = k; drawBoxes(vp, P); }
+});
+vp.addEventListener('pointerleave', () => { if (P.hover) { P.hover = null; drawBoxes(vp, P); } });
+vp.addEventListener('focusin', e => {
+  if (!P.mode || P.sel || P.panel || inWidget(e.target)) return;
+  const el = pagePart(e.target); if (el) { P.hl = 'sid:' + el.dataset.sid; drawBoxes(vp, P); say('Outlined: ' + readable(el) + '. Press Enter to report on it.'); }
+});
+vp.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (P.sel) { e.preventDefault(); closeCompose(); return; }
+    if (P.panel) { e.preventDefault(); closePanel(); return; }
+    if (P.nav) { e.preventDefault(); P.nav = false; focusAfter = '[data-act=nav]'; render(); return; }
+    if (P.mode) { e.preventDefault(); leaveMode(); return; }
+  }
+  if (!P.mode || P.sel || P.panel || P.perm !== 'full') return;
+  /* arrow keys move the outline from anywhere except a text field or tab;
+     the outlined part takes focus (tabindex -1 when it has none), so Enter
+     always lands on it */
+  if (['ArrowDown', 'ArrowRight', 'ArrowUp', 'ArrowLeft'].includes(e.key) && !e.target.matches('input,textarea,select,[role=tab]')) {
+    e.preventDefault(); e.stopPropagation();
+    const list = candidates(vp);
+    const cur = resolveEl(vp, P.hl); let i = cur ? list.indexOf(cur) : -1;
+    i = e.key === 'ArrowDown' || e.key === 'ArrowRight' ? Math.min(list.length - 1, i + 1) : Math.max(0, i - 1);
+    const el = list[i]; if (!el) return;
+    if (!el.matches('a[href],button,input,select,textarea,[tabindex]')) el.setAttribute('tabindex', '-1');
+    const main = $(vp, '.main'); if (main.contains(el)) { const g = rel(el, main); if (g.y < 0 || g.y + g.h > main.clientHeight) main.scrollTop += g.y - 40; }
+    el.focus({ preventScroll: true });
+    return;
+  }
+  if (inWidget(e.target)) return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault(); e.stopPropagation();
+    const el = resolveEl(vp, P.hl) || pagePart(e.target); if (el) openCompose('sid:' + el.dataset.sid);
+  }
+}, true);
+
+/* the widget's own controls */
+vp.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t) return;
+  const a = t.dataset.act;
+  if (P.mode && !inWidget(t) && P.perm === 'full') return; // captured above
+  if (a !== 'resolved' && a !== 'type') e.preventDefault();
+  if (a === 'report') { if (P.perm === 'read') openPanel('list', { tab: 'page' }); else if (P.mode) leaveMode(); else enterMode(); }
+  else if (a === 'done') leaveMode();
+  else if (a === 'whole' || a === 'whole-from-list') { P.panel = null; openCompose('page'); }
+  else if (a === 'list') openPanel('list', { tab: 'page', list: '' });
+  else if (a === 'nav') { P.nav = true; focusAfter = '.sb-close'; render(); }
+  else if (a === 'nav-close') { P.nav = false; focusAfter = '[data-act=nav]'; render(); }
+  else if (a === 'cancel' || a === 'scrim') { if (P.sel) closeCompose(); else closePanel(); }
+  else if (a === 'close') closePanel();
+  else if (a === 'pin') openPanel('thread', { thread: +t.dataset.no, back: false });
+  else if (a === 'open') openPanel('thread', { thread: +t.dataset.no, back: true });
+  else if (a === 'back') openPanel('list', { back: false });
+  else if (a === 'tab') { P.tab = t.dataset.tab; focusAfter = '#rw-tab-' + P.tab; render(); }
+  else if (a === 'retry') { const again = P.list === 'error'; P.list = 'loading'; render(); say('Loading the reports'); timer = setTimeout(() => { P.list = again ? 'error-again' : ''; render(); say(again ? 'Error: the reports still could not be loaded.' : P.R.length + ' reports on this page.'); }, 900); }
+  else if (a === 'show') { const no = +t.dataset.no; Object.assign(P, { panel: null, show: no }); const r = findR(P, no); render(); const el = resolveEl(vp, r.anchor); if (el) { const m = $(vp, '.main'); m.scrollTop += rel(el, m).y - 60; drawBoxes(vp, P); } const pin = $(vp, `.rw-pin[data-no="${no}"]`); if (pin) pin.focus(); say('Report ' + no + ' is about ' + r.el + ', outlined on the page.'); }
+  else if (a === 'to-field') { const f = $(vp, '#rw-ta'); if (f) f.focus(); }
+  else if (a === 'to-reply') { const f = $(vp, '#rw-rta'); if (f) f.focus(); }
+  else if (a === 'send') {
+    const ta = $(vp, '#rw-ta'); P.draft = ta ? ta.value : P.draft;
+    const ty = $(vp, 'input[name=rw-type]:checked'); if (ty) P.type = ty.value;
+    if (P.compose === 'sending') { say('Your report is still sending.'); return; }
+    if (!P.draft.trim()) { P.compose = 'invalid'; focusAfter = '#rw-es'; render(); document.title = 'Error: Officials register – Race Officials'; say('There is a problem: enter your comment.'); return; }
+    document.title = 'Officials register – Race Officials';
+    P.compose = 'sending'; render(); say('Sending your report.');
+    timer = setTimeout(() => {
+      const no = nextNo++; P.newNo = no;
+      P.R.push({ no, type: P.type, status: 'open', anchor: P.sel === 'page' ? null : P.sel, whole: P.sel === 'page', el: P.sel === 'page' ? 'the whole page' : P.selName, page: 'Officials register', by: ME, snap: true, msgs: [{ by: ME, t: '2 Nov 2026 at 14:21 UTC', b: P.draft }] });
+      P.mine = P.R.filter(r => r.by === ME).concat(OTHER_MINE);
+      P.compose = 'sent'; focusAfter = '#rw-ph'; render(); say('Report ' + no + ' sent.');
+    }, 1200);
+  }
+  else if (a === 'sent-close') { Object.assign(P, { sel: null, compose: '' }); focusAfter = '[data-act=whole]'; render(); }
+  else if (a === 'open-new') {
+    const no = P.newNo || 46, snap = P.compose !== 'toolarge';
+    if (!findR(P, no)) { P.R.push({ no, type: P.type, status: 'open', anchor: 'export', el: 'button “Export this list”', page: 'Officials register', by: ME, snap, msgs: [{ by: ME, t: '2 Nov 2026 at 14:21 UTC', b: P.draft }] }); P.mine = P.R.filter(r => r.by === ME).concat(OTHER_MINE); }
+    Object.assign(P, { sel: null, compose: '' }); openPanel('thread', { thread: no });
+  }
+  else if (a === 'goto') { closePanel(); say('Opening ' + t.dataset.page + ' at report ' + t.dataset.no + '.'); }
+  else if (a === 'reply') {
+    const r = findR(P, P.thread); const ta = $(vp, '#rw-rta'); P.reply = ta ? ta.value : '';
+    if (!P.reply.trim()) { P.tsub = 'invalid'; focusAfter = '#rw-res'; render(); say('There is a problem: enter your reply.'); return; }
+    r.msgs.push({ by: ME, t: '2 Nov 2026 at 14:25 UTC', b: P.reply });
+    P.reopened = r.status === 'answered' && r.by === ME; if (P.reopened) r.status = 'open';
+    P.reply = ''; P.tsub = 'sent'; focusAfter = '#rw-th'; render(); say(P.reopened ? 'Reply sent. Report ' + r.no + ' is open again.' : 'Reply sent.');
+  }
+  else if (a === 'resolve') { const r = findR(P, P.thread); r.status = 'resolved'; r.msgs.push({ evt: 'resolved', by: ME, t: '2 Nov 2026 at 14:26 UTC' }); P.tsub = 'resolved-now'; focusAfter = '#rw-th'; render(); say('Report ' + r.no + ' is resolved. Its pin is hidden.'); }
+  else if (a === 'reopen') { const r = findR(P, P.thread); r.status = 'open'; r.msgs.push({ evt: 'reopened', by: ME, t: '2 Nov 2026 at 14:27 UTC' }); P.tsub = 'reopened'; focusAfter = '#rw-th'; render(); say('Report ' + r.no + ' is open again.'); }
+});
+vp.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.act === 'resolved') { P.showResolved = t.checked; focusAfter = '[data-act=resolved]'; render(); say(t.checked ? 'Resolved pins are shown.' : 'Resolved pins are hidden.'); }
+  if (t.dataset.act === 'type') P.type = t.value;
+});
+vp.addEventListener('input', e => { if (e.target.id === 'rw-ta') P.draft = e.target.value; if (e.target.id === 'rw-rta') P.reply = e.target.value; });
+vp.addEventListener('keydown', e => {
+  const t = e.target; if (t.getAttribute('role') !== 'tab') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowLeft' || e.key === 'Home' || e.key === 'End') { e.preventDefault(); P.tab = P.tab === 'page' ? 'mine' : 'page'; if (e.key === 'Home') P.tab = 'page'; if (e.key === 'End') P.tab = 'mine'; focusAfter = '#rw-tab-' + P.tab; render(); }
+});
+
+drawGallery();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "@annotatie/api",
+  "private": true,
+  "type": "module",
+  "main": "src/handler.ts"
+}

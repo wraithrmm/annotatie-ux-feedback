@@ -1,0 +1,95 @@
+name: ci
+
+# Every PR: tests, build, and an OpenTofu plan with the read-only plan role.
+# No secrets: AWS by OIDC, the Cloudflare token read from SSM.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  TOFU_VERSION: 1.10.10
+  NODE_VERSION: 22
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  infra:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # OIDC to AWS
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ env.TOFU_VERSION }}
+          tofu_wrapper: false
+
+      - name: Format
+        run: tofu fmt -check -recursive infra
+
+      - name: Validate bootstrap
+        working-directory: infra/bootstrap
+        run: tofu init -backend=false -input=false && tofu validate
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/annotatie-gh-plan
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Read-only Cloudflare token from SSM
+        run: |
+          token=$(aws ssm get-parameter --name "${{ vars.CF_READ_TOKEN_PARAM }}" --with-decryption --query Parameter.Value --output text)
+          echo "::add-mask::$token"
+          echo "CLOUDFLARE_API_TOKEN=$token" >> "$GITHUB_ENV"
+
+      - name: Plan
+        working-directory: infra/live
+        run: |
+          tofu init -input=false \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="region=${{ vars.AWS_REGION }}"
+          tofu plan -input=false -lock=false -out=tfplan \
+            -var "aws_region=${{ vars.AWS_REGION }}" \
+            -var "domain_name=${{ vars.DOMAIN_NAME }}" \
+            -var "cloudflare_zone=${{ vars.CLOUDFLARE_ZONE }}" \
+            -var "build_sha=${{ github.sha }}"
+          tofu show -json tfplan > plan.json
+          tofu show -no-color tfplan | tail -n 60 >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Cost guard (no fixed-cost resources)
+        run: node tools/cost-guard/cli.mjs infra/live/plan.json
