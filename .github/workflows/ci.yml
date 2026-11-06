@@ -31,7 +31,14 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - name: DynamoDB Local for the tests
-        run: docker run -d --name ddb -p 8000:8000 amazon/dynamodb-local:2.5.3 -jar DynamoDBLocal.jar -inMemory -sharedDb
+        run: |
+          docker run -d --name ddb -p 8000:8000 amazon/dynamodb-local:2.5.3 -jar DynamoDBLocal.jar -inMemory -sharedDb
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/ || true)
+            [ "$code" = "400" ] && echo "DynamoDB Local is up" && exit 0
+            sleep 1
+          done
+          docker logs ddb; exit 1
       - run: npm test
       - run: npm run build
       - uses: actions/upload-artifact@v4
