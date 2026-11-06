@@ -4,7 +4,7 @@ import { Db, jwksFor, makePushNotifier, Service, vapidKeys } from "@annotatie/st
 import { createApp } from "./app.js";
 import { s3Captures } from "./captures.js";
 
-const baseUrl = process.env.BASE_URL ?? "https://annotatie.consulteasy.co.uk";
+const baseUrl = process.env.ANNOTATIE_BASE_URL ?? "https://annotatie.consulteasy.co.uk";
 let app: ReturnType<typeof createApp> | undefined;
 
 function init() {

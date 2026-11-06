@@ -64,8 +64,9 @@ export async function mcpPrincipal(claims: JWTPayload & Record<string, unknown>,
   const user = await svc.getUser(claims.sub);
   if (!user) throw new HttpError(401, "invalid_token");
   await svc.touchGrant(grantId, user.id);
-  const granted = String(claims.scope ?? "").split(" ");
-  const scopes = new Set(granted.filter((s): s is AgentScope => (AGENT_SCOPES as readonly string[]).includes(s)));
+  // What the agent may do is what the person ticked on the consent screen (our record), not the
+  // OAuth scope string.
+  const scopes = new Set(grant.scopes.filter((s): s is AgentScope => (AGENT_SCOPES as readonly string[]).includes(s)));
   return {
     kind: "agent",
     userId: user.id,
