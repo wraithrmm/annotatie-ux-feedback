@@ -32,6 +32,8 @@ class Browser {
       body = JSON.stringify(opts.json);
       headers["content-type"] = "application/json";
     }
+    // Real clients send content-length; API Gateway passes it through.
+    if (body !== undefined) headers["content-length"] = String(Buffer.byteLength(body));
     const event = {
       version: "2.0",
       routeKey: "$default",

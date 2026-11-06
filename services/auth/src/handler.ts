@@ -75,7 +75,10 @@ export async function handleAuth(a: App, event: APIGatewayProxyEventV2, context:
         const uris = Array.isArray(meta.redirect_uris) ? (meta.redirect_uris as string[]) : [];
         if (uris.length && uris.every(isLoopback) && !meta.application_type) {
           meta.application_type = "native";
-          event = { ...event, body: JSON.stringify(meta), isBase64Encoded: false };
+          const rewritten = JSON.stringify(meta);
+          event = { ...event, body: rewritten, isBase64Encoded: false };
+          // The body changed length: the provider reads exactly content-length bytes.
+          headers["content-length"] = String(Buffer.byteLength(rewritten));
         }
       } catch {
         /* let the provider answer the bad request */

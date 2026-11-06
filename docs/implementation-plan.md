@@ -221,6 +221,23 @@ deployment.
 If Race Officials is the first real site, P6 is work in the `race-fficials` repo. That repo's own rules apply
 (design gates, branch model), and it needs its own approval. It isn't part of this repo's delivery.
 
+### 7a. As built (6 Nov 2026): P1–P5 live
+
+P1–P5 are deployed to `https://annotatie.consulteasy.co.uk` by the `deploy` workflow. The smoke tests
+check health, the portal, discovery (RFC 8414, RFC 9728), the JWKS, the `/mcp` 401 and the widget script.
+
+| Phase | Where | Notes |
+|---|---|---|
+| P1 Auth | `services/auth` (λ `annotatie-auth`) | node-oidc-provider 8 behind serverless-http. Agent scopes are resource-server scopes only, never OpenID scopes. An authorize request with no `scope` gets a default (portal: `openid offline_access profile email`; agents: all agent scopes; what an agent may really do is what the person ticks on consent). Signing key, cookie keys and VAPID keys are made by the Lambdas in SSM `/annotatie/auth/*` on first use |
+| P2 API | `services/api`, `packages/store`, `packages/core` | `packages/core` is browser-safe (Web Crypto); `sha256` lives in the Node-only store |
+| P3 Portal | `apps/portal` → `/board/` | CSP from a CloudFront response-headers policy; images also from the captures bucket |
+| P4 Widget, server SDK | `packages/sdk-browser` → `/sdk/v1/annotatie.js`, `packages/sdk-server-node` | Gaps the widget build found are listed in its commit and in §9 follow-ups: no report-type field, no widget resolve/reopen route, no request-id header, sha256 encoding assumed hex |
+| P5 MCP | `services/mcp` (λ `annotatie-mcp`) | Stateless Streamable HTTP, JSON responses. Fourteen tools; MCP JWTs (checked against the grant record) or personal access tokens |
+| Jobs | `services/jobs` (λ `annotatie-jobs`) | Daily retention at 03:15 London. The first owner's invite: invoke with `{"action":"bootstrap-owner","email":"…"}` (replaces the planned CLI) |
+
+Data: table `annotatie-data` (on demand, TTL, PITR, deletion protection) and bucket
+`annotatie-snapshots-<account>` (`pending/` expires after a day).
+
 ## 8. Testing
 
 - **Unit** (Vitest): the approval gate table, permissions, anchoring, snapshot sanitising, assertion checks.
