@@ -7,7 +7,7 @@ All shapes are in `packages/core/src/types.ts`. Base URL `https://annotatie.cons
 
 | Caller | How it gets a token | Token |
 |---|---|---|
-| **Portal** (`/board/`) | OAuth 2.1 code + PKCE. `client_id=annotatie-portal`, `redirect_uri=BASE/board/callback`, `scope=openid offline_access`, `resource=BASE/api`, `prompt=consent` is never needed (first-party). Token endpoint `BASE/oauth/token`. Refresh tokens rotate on every use; keep the latest only | JWT, `aud=BASE/api`, `client_id=annotatie-portal`, 15 min |
+| **Portal** (`/board/`) | OAuth 2.1 code + PKCE. `client_id=annotatie-portal`, `redirect_uri=BASE/board/` (the app reads `?code=` on load; portal routes are hash routes, `/board/#/…`), `scope=openid offline_access`, `resource=BASE/api`, `prompt=consent` is never needed (first-party). Token endpoint `BASE/oauth/token`. Refresh tokens rotate on every use; keep the latest only | JWT, `aud=BASE/api`, `client_id=annotatie-portal`, 15 min |
 | **Widget** (host site) | The host's **server** signs an assertion (EdDSA, 60 s) and posts `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=…` to `BASE/oauth/token`. The browser gets the result from the host's own `/annotatie/token` endpoint | JWT, `aud=BASE/api`, `client_id=site:<siteId>`, `scope=report`, `site`, `name`, 5 min. No refresh token |
 | **Agents** | MCP discovery → dynamic registration → code + PKCE with `resource=BASE/mcp`; or a personal access token `ann_pat_…` made in the portal | JWT `aud=BASE/mcp` (15 min, refresh 90 days), or the opaque PAT. **Never accepted by `/api/*`** |
 
