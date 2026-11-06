@@ -1,0 +1,7 @@
+{
+  "name": "@annotatie/jobs",
+  "private": true,
+  "type": "module",
+  "main": "src/handler.ts",
+  "dependencies": { "@annotatie/core": "*", "@annotatie/store": "*" }
+}
