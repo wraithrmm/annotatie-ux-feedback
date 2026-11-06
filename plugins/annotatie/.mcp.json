@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "annotatie": {
+      "type": "http",
+      "url": "https://annotatie.consulteasy.co.uk/mcp"
+    }
+  }
+}

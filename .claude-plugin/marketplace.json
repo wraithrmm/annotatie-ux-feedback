@@ -1,0 +1,13 @@
+{
+  "name": "annotatie",
+  "description": "Annotatie for Claude Code: the connector, skills and the reviewer question gate.",
+  "owner": { "name": "ConsultEasy" },
+  "plugins": [
+    {
+      "name": "annotatie",
+      "source": "./plugins/annotatie",
+      "description": "Read and answer site users' reports, ask the reviewer questions through Annotatie instead of the chat, and run the liaison loop that hands answers back to waiting agents.",
+      "category": "productivity"
+    }
+  ]
+}

@@ -16,3 +16,6 @@ crash.log
 *.tfvars
 !*.example.tfvars
 .build/
+
+# Annotatie plugin: per-project liaison ledger and opt-out marker
+.annotatie/
