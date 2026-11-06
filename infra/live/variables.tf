@@ -47,3 +47,9 @@ variable "api_reserved_concurrency" {
   type        = number
   default     = null
 }
+
+variable "auto_approve_allowed" {
+  description = "Kill switch: false stops every site's auto-approve at once (agent replies always wait for a person)."
+  type        = bool
+  default     = true
+}

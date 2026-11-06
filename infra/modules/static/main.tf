@@ -16,17 +16,19 @@ variable "source_dir" {
 
 locals {
   content_types = {
-    html  = "text/html; charset=utf-8"
-    css   = "text/css; charset=utf-8"
-    js    = "text/javascript; charset=utf-8"
-    mjs   = "text/javascript; charset=utf-8"
-    json  = "application/json"
-    svg   = "image/svg+xml"
-    png   = "image/png"
-    ico   = "image/x-icon"
-    woff2 = "font/woff2"
-    txt   = "text/plain; charset=utf-8"
-    map   = "application/json"
+    html        = "text/html; charset=utf-8"
+    css         = "text/css; charset=utf-8"
+    js          = "text/javascript; charset=utf-8"
+    mjs         = "text/javascript; charset=utf-8"
+    json        = "application/json"
+    svg         = "image/svg+xml"
+    png         = "image/png"
+    ico         = "image/x-icon"
+    woff2       = "font/woff2"
+    txt         = "text/plain; charset=utf-8"
+    map         = "application/json"
+    webmanifest = "application/manifest+json"
+    webp        = "image/webp"
   }
   files = fileset(var.source_dir, "**")
 }
@@ -68,8 +70,13 @@ resource "aws_s3_object" "file" {
   source       = "${var.source_dir}/${each.value}"
   etag         = filemd5("${var.source_dir}/${each.value}")
   content_type = lookup(local.content_types, lower(element(split(".", each.value), length(split(".", each.value)) - 1)), "application/octet-stream")
-  # HTML is revalidated every time; hashed assets (later) are cached for a year.
-  cache_control = endswith(each.value, ".html") ? "no-cache" : "public, max-age=31536000, immutable"
+  # Only the portal's hashed assets are immutable; HTML and the service worker revalidate; the widget
+  # SDK (a stable URL customers embed) and icons are cached for five minutes.
+  cache_control = (
+    startswith(each.value, "board/assets/") ? "public, max-age=31536000, immutable" :
+    endswith(each.value, ".html") || endswith(each.value, "sw.js") ? "no-cache" :
+    "public, max-age=300"
+  )
 }
 
 output "bucket_id" {

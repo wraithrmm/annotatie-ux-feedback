@@ -14,3 +14,12 @@ output "cloudfront_domain" {
 output "api_function" {
   value = module.api.function_name
 }
+
+output "jobs_function" {
+  description = "Invoke with {\"action\":\"bootstrap-owner\",\"email\":\"...\"} for the first invite."
+  value       = module.jobs.function_name
+}
+
+output "table_name" {
+  value = module.data.table_name
+}

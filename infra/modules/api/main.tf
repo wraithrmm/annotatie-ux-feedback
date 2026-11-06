@@ -32,6 +32,27 @@ variable "reserved_concurrency" {
   default = null
 }
 
+variable "environment" {
+  type    = map(string)
+  default = {}
+}
+
+variable "policy_json" {
+  description = "The API Lambda's data permissions (table, captures, secrets)."
+  type        = string
+}
+
+variable "extra_routes" {
+  description = "Other Lambdas behind this HTTP API: route keys to a function alias."
+  type = map(object({
+    route_keys    = list(string)
+    invoke_arn    = string
+    function_name = string
+    alias_name    = string
+  }))
+  default = {}
+}
+
 locals {
   fn = "${var.name}-api"
 }
@@ -76,6 +97,12 @@ resource "aws_iam_role_policy" "logs" {
   policy = data.aws_iam_policy_document.logs.json
 }
 
+resource "aws_iam_role_policy" "app" {
+  name   = "app"
+  role   = aws_iam_role.fn.id
+  policy = var.policy_json
+}
+
 resource "aws_lambda_function" "fn" {
   function_name                  = local.fn
   role                           = aws_iam_role.fn.arn
@@ -90,11 +117,11 @@ resource "aws_lambda_function" "fn" {
   publish                        = true
 
   environment {
-    variables = {
+    variables = merge({
       BUILD_SHA                           = var.build_sha
       NODE_OPTIONS                        = "--enable-source-maps"
       AWS_NODEJS_CONNECTION_REUSE_ENABLED = "1"
-    }
+    }, var.environment)
   }
 
   logging_config {
@@ -102,7 +129,7 @@ resource "aws_lambda_function" "fn" {
     log_group  = aws_cloudwatch_log_group.fn.name
   }
 
-  depends_on = [aws_iam_role_policy.logs]
+  depends_on = [aws_iam_role_policy.logs, aws_iam_role_policy.app]
 }
 
 resource "aws_lambda_alias" "live" {
@@ -128,6 +155,39 @@ resource "aws_apigatewayv2_route" "api" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "ANY /api/{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.fn.id}"
+}
+
+# ---------------------------------------------------------------- other Lambdas (auth, mcp)
+locals {
+  extra_route_list = merge([
+    for k, v in var.extra_routes : { for rk in v.route_keys : "${k} ${rk}" => { fn = k, route_key = rk } }
+  ]...)
+}
+
+resource "aws_apigatewayv2_integration" "extra" {
+  for_each               = var.extra_routes
+  api_id                 = aws_apigatewayv2_api.http.id
+  integration_type       = "AWS_PROXY"
+  integration_uri        = each.value.invoke_arn
+  payload_format_version = "2.0"
+  timeout_milliseconds   = 15000
+}
+
+resource "aws_apigatewayv2_route" "extra" {
+  for_each  = local.extra_route_list
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = each.value.route_key
+  target    = "integrations/${aws_apigatewayv2_integration.extra[each.value.fn].id}"
+}
+
+resource "aws_lambda_permission" "extra" {
+  for_each      = var.extra_routes
+  statement_id  = "AllowHttpApi"
+  action        = "lambda:InvokeFunction"
+  function_name = each.value.function_name
+  qualifier     = each.value.alias_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }
 
 resource "aws_apigatewayv2_stage" "default" {

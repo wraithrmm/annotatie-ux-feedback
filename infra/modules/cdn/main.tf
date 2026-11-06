@@ -1,5 +1,5 @@
-# One CloudFront distribution: static files from S3, /api/* to the HTTP API.
-# Later phases add /oauth/*, /.well-known/*, /mcp and /sdk/* behaviours.
+# One CloudFront distribution: static files (portal, widget SDK) from S3; /api/*, /oauth/*,
+# /.well-known/* and /mcp to the HTTP API, uncached.
 
 variable "name" {
   type = string
@@ -19,6 +19,11 @@ variable "static_bucket_regional_dns" {
 
 variable "api_origin_domain" {
   type = string
+}
+
+variable "captures_origin" {
+  description = "https://<captures bucket regional host>: presigned capture images load from there."
+  type        = string
 }
 
 locals {
@@ -55,6 +60,85 @@ resource "aws_cloudfront_function" "index" {
   JS
 }
 
+# The portal's headers: the managed security set plus a strict CSP (no inline script; styles inline for
+# the page-copy viewer; images also from the captures bucket by presigned URL).
+resource "aws_cloudfront_response_headers_policy" "static" {
+  name    = "${var.name}-static"
+  comment = "Security headers and CSP for the portal"
+
+  security_headers_config {
+    content_security_policy {
+      override = true
+      content_security_policy = join("; ", [
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: ${var.captures_origin}",
+        "connect-src 'self'",
+        "worker-src 'self'",
+        "manifest-src 'self'",
+        "frame-src 'self' blob:",
+        "object-src 'none'",
+        "base-uri 'none'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+      ])
+    }
+    content_type_options {
+      override = true
+    }
+    frame_options {
+      frame_option = "DENY"
+      override     = true
+    }
+    referrer_policy {
+      referrer_policy = "strict-origin-when-cross-origin"
+      override        = true
+    }
+    strict_transport_security {
+      access_control_max_age_sec = 31536000
+      include_subdomains         = false
+      override                   = true
+    }
+  }
+}
+
+# The widget script is loaded by customers' pages: no frame or CSP headers that would mean anything
+# there, but cross-origin readable so integrity checks work.
+resource "aws_cloudfront_response_headers_policy" "sdk" {
+  name    = "${var.name}-sdk"
+  comment = "Widget SDK: CORS-readable, nosniff"
+
+  cors_config {
+    access_control_allow_credentials = false
+    access_control_allow_headers {
+      items = ["*"]
+    }
+    access_control_allow_methods {
+      items = ["GET", "HEAD"]
+    }
+    access_control_allow_origins {
+      items = ["*"]
+    }
+    origin_override = true
+  }
+
+  security_headers_config {
+    content_type_options {
+      override = true
+    }
+    strict_transport_security {
+      access_control_max_age_sec = 31536000
+      include_subdomains         = false
+      override                   = true
+    }
+  }
+}
+
+locals {
+  api_paths = ["/api/*", "/oauth/*", "/.well-known/*", "/mcp", "/mcp/*"]
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   comment             = "${var.name} (${var.domain_name})"
@@ -88,7 +172,7 @@ resource "aws_cloudfront_distribution" "this" {
     cached_methods             = ["GET", "HEAD"]
     compress                   = true
     cache_policy_id            = local.caching_optimized
-    response_headers_policy_id = local.security_headers_policy_id
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.static.id
 
     function_association {
       event_type   = "viewer-request"
@@ -96,16 +180,30 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
+  dynamic "ordered_cache_behavior" {
+    for_each = local.api_paths
+    content {
+      path_pattern               = ordered_cache_behavior.value
+      target_origin_id           = local.api_origin_id
+      viewer_protocol_policy     = "https-only"
+      allowed_methods            = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+      cached_methods             = ["GET", "HEAD"]
+      compress                   = true
+      cache_policy_id            = local.caching_disabled
+      origin_request_policy_id   = local.all_viewer_except_host
+      response_headers_policy_id = local.security_headers_policy_id
+    }
+  }
+
   ordered_cache_behavior {
-    path_pattern               = "/api/*"
-    target_origin_id           = local.api_origin_id
-    viewer_protocol_policy     = "https-only"
-    allowed_methods            = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    path_pattern               = "/sdk/*"
+    target_origin_id           = local.static_origin_id
+    viewer_protocol_policy     = "redirect-to-https"
+    allowed_methods            = ["GET", "HEAD", "OPTIONS"]
     cached_methods             = ["GET", "HEAD"]
     compress                   = true
-    cache_policy_id            = local.caching_disabled
-    origin_request_policy_id   = local.all_viewer_except_host
-    response_headers_policy_id = local.security_headers_policy_id
+    cache_policy_id            = local.caching_optimized
+    response_headers_policy_id = aws_cloudfront_response_headers_policy.sdk.id
   }
 
   restrictions {

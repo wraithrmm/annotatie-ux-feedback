@@ -39,6 +39,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: DynamoDB Local for the tests
+        run: docker run -d --name ddb -p 8000:8000 amazon/dynamodb-local:2.5.3 -jar DynamoDBLocal.jar -inMemory -sharedDb
       - run: npm test
       - run: npm run build
 
@@ -84,7 +86,7 @@ jobs:
       - name: Invalidate HTML
         run: |
           aws cloudfront create-invalidation --distribution-id "$DIST_ID" \
-            --paths "/index.html" "/board/*" --query Invalidation.Id --output text
+            --paths "/index.html" "/board/*" "/sdk/*" --query Invalidation.Id --output text
 
       - name: Smoke tests
         env:
@@ -99,4 +101,14 @@ jobs:
           curl -fsS -o /dev/null "$BASE/board/"
           code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/does-not-exist")
           test "$code" = "404"
+          # P1 discovery (RFC 8414, RFC 9728) and the JWKS
+          curl -fsS "$BASE/.well-known/oauth-authorization-server" | grep -q '"issuer":"'"$BASE"'"'
+          curl -fsS "$BASE/.well-known/oauth-protected-resource/mcp" | grep -q '"resource":"'"$BASE/mcp"'"'
+          curl -fsS "$BASE/oauth/jwks" | grep -q '"keys"'
+          # P5: /mcp without a token points the client at the metadata
+          hdr=$(curl -s -o /dev/null -D - -X POST -H 'content-type: application/json' -d '{}' "$BASE/mcp")
+          echo "$hdr" | grep -qi '^HTTP/[0-9.]* 401'
+          echo "$hdr" | grep -qi 'www-authenticate: Bearer resource_metadata='
+          # P4: the widget script
+          curl -fsS -o /dev/null "$BASE/sdk/v1/annotatie.js"
           echo "Deployed ${GITHUB_SHA} to $BASE" >> "$GITHUB_STEP_SUMMARY"

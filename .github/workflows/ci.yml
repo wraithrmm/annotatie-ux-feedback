@@ -30,6 +30,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - name: DynamoDB Local for the tests
+        run: docker run -d --name ddb -p 8000:8000 amazon/dynamodb-local:2.5.3 -jar DynamoDBLocal.jar -inMemory -sharedDb
       - run: npm test
       - run: npm run build
       - uses: actions/upload-artifact@v4
