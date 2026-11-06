@@ -1,0 +1,19 @@
+{
+  "name": "@annotatie/sdk-browser",
+  "private": true,
+  "type": "module",
+  "description": "The Annotatie widget: report mode, pins, threads and the page capture, in a closed Shadow DOM. No runtime dependencies.",
+  "main": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "e2e": "playwright test -c playwright.config.ts",
+    "fixture-host": "node e2e/fixture-host/server.mjs"
+  },
+  "devDependencies": {
+    "@annotatie/core": "*",
+    "@annotatie/sdk-server-node": "*",
+    "@playwright/test": "^1.55.0",
+    "happy-dom": "^20.0.0"
+  }
+}

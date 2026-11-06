@@ -1,0 +1,11 @@
+{
+  "name": "@annotatie/sdk-server-node",
+  "private": true,
+  "type": "module",
+  "description": "Annotatie for a Node host: site keys, the signed assertion, the token exchange, the /annotatie/token handler and the script tag. node:crypto only.",
+  "main": "src/index.ts",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": {
+    "@annotatie/core": "*"
+  }
+}

@@ -13,7 +13,8 @@
     "tools/*"
   ],
   "scripts": {
-    "typecheck": "tsc -p tsconfig.json && npm run typecheck -w @annotatie/portal",
+    "typecheck": "tsc -p tsconfig.json && npm run typecheck -w @annotatie/portal && tsc -p packages/sdk-browser/tsconfig.json && tsc -p packages/sdk-browser/e2e/tsconfig.json",
+    "e2e:widget": "npm run e2e -w @annotatie/sdk-browser",
     "test": "vitest run",
     "build": "node scripts/build.mjs",
     "cost-guard": "node tools/cost-guard/cli.mjs"

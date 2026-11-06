@@ -21,5 +21,8 @@
     "services/*/test/**/*.ts",
     "tools/*/**/*.ts",
     "tools/*/**/*.mjs"
+  ],
+  "exclude": [
+    "packages/sdk-browser/**"
   ]
 }
