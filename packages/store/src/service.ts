@@ -1,6 +1,7 @@
 // The domain service: every read and write of Annotatie's data, with its permission checks. The API
 // and MCP Lambdas are thin layers over this. Principals come from verified tokens (principal.ts).
 
+import { createHash } from "node:crypto";
 import {
   type AgentGrant,
   type AgentScope,
@@ -37,7 +38,6 @@ import {
   releaseTime,
   reqStr,
   roleAtLeast,
-  sha256,
   str,
   visibleToUsers,
 } from "@annotatie/core";
@@ -1442,4 +1442,8 @@ function parseDecision(v: unknown, asker?: Decision["asker"]): Decision {
 function summarise(text: string): string {
   const one = text.replace(/\s+/g, " ").trim();
   return one.length > 80 ? `${one.slice(0, 77)}…` : one;
+}
+
+function sha256(s: string | Buffer): string {
+  return createHash("sha256").update(s).digest("base64url");
 }

@@ -1,4 +1,3 @@
-import { createHash, randomBytes } from "node:crypto";
 import type { Role } from "./types.js";
 
 /** Time-sortable id: 10 chars of time (ms, base32) + 16 random chars. Sorts by creation. */
@@ -16,12 +15,15 @@ export function newId(now = Date.now()): string {
   return time + r;
 }
 
-export function randomToken(bytes = 32): string {
-  return randomBytes(bytes).toString("base64url");
+// Web Crypto, so this package also runs in the browser (portal, widget).
+function randomBytes(n: number): Uint8Array {
+  return globalThis.crypto.getRandomValues(new Uint8Array(n));
 }
 
-export function sha256(s: string | Buffer): string {
-  return createHash("sha256").update(s).digest("base64url");
+export function randomToken(bytes = 32): string {
+  let bin = "";
+  for (const b of randomBytes(bytes)) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 const RANK: Record<Role, number> = { viewer: 1, member: 2, owner: 3 };
