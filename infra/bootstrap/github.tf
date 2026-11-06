@@ -84,3 +84,22 @@ resource "github_branch_protection" "main" {
     required_approving_review_count = 0
   }
 }
+
+# GitHub's OIDC tokens now carry an immutable subject: "repo:<owner>@<owner id>/<repo>@<repo id>:...".
+# The roles trust that form (and the older name-only form, for repos that still send it).
+data "github_user" "owner" {
+  username = var.github_owner
+}
+
+data "github_repository" "existing" {
+  count     = var.create_github_repo ? 0 : 1
+  full_name = "${var.github_owner}/${var.github_repo}"
+}
+
+locals {
+  repo_id = var.create_github_repo ? github_repository.this[0].repo_id : data.github_repository.existing[0].repo_id
+  oidc_repos = [
+    "${var.github_owner}@${data.github_user.owner.id}/${var.github_repo}@${local.repo_id}",
+    local.repo_full,
+  ]
+}
