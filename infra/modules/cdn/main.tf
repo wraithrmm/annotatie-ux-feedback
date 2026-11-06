@@ -38,6 +38,23 @@ resource "aws_cloudfront_origin_access_control" "static" {
   signing_protocol                  = "sigv4"
 }
 
+# S3 behind OAC has no folder index: "/board/" would be a 403. Map any path ending in "/" (or with no
+# file extension) to its index.html. Billed per request (2M/month free), no fixed cost.
+resource "aws_cloudfront_function" "index" {
+  name    = "${var.name}-dir-index"
+  runtime = "cloudfront-js-2.0"
+  comment = "Serve index.html for folder paths"
+  publish = true
+  code    = <<-JS
+    function handler(event) {
+      var r = event.request;
+      if (r.uri.endsWith('/')) { r.uri += 'index.html'; }
+      else if (!r.uri.split('/').pop().includes('.')) { r.uri += '/index.html'; }
+      return r;
+    }
+  JS
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   comment             = "${var.name} (${var.domain_name})"
@@ -72,6 +89,11 @@ resource "aws_cloudfront_distribution" "this" {
     compress                   = true
     cache_policy_id            = local.caching_optimized
     response_headers_policy_id = local.security_headers_policy_id
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.index.arn
+    }
   }
 
   ordered_cache_behavior {
