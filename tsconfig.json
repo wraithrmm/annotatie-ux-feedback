@@ -10,7 +10,17 @@
     "noEmit": true,
     "allowJs": true,
     "checkJs": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   },
-  "include": ["services/*/src/**/*.ts", "services/*/test/**/*.ts", "tools/*/**/*.ts", "tools/*/**/*.mjs"]
+  "include": [
+    "packages/*/src/**/*.ts",
+    "packages/*/test/**/*.ts",
+    "services/*/src/**/*.ts",
+    "services/*/test/**/*.ts",
+    "cli/src/**/*.ts",
+    "tools/*/**/*.ts",
+    "tools/*/**/*.mjs"
+  ]
 }
