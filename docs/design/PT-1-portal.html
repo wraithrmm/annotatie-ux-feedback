@@ -95,7 +95,7 @@ h1{font-size:24px;margin:0 0 4px} h2{font-size:18px;margin:0 0 10px} h3{font-siz
 
 /* lists = rows, never a sideways table (MOB-r1 spirit) */
 .list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
-.li{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--border);text-decoration:none;color:inherit;cursor:pointer}
+.li{display:grid;grid-template-columns:40px 72px 1fr auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--border);text-decoration:none;color:inherit;cursor:pointer}
 .li:first-child{border-top:0}
 .li:hover{background:var(--surface-2)}
 .li .n{font-weight:700;color:var(--muted)}
@@ -125,6 +125,31 @@ h1{font-size:24px;margin:0 0 4px} h2{font-size:18px;margin:0 0 10px} h3{font-siz
 .seg label:has(input:checked){background:var(--accent-soft)}
 .snap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
 .snap .bar{padding:8px 12px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+/* capture panel: "Page when reported" (capture-design.md section 5) */
+.capd{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.capd>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;gap:12px;align-items:center;font-weight:700;min-height:44px}
+.capd>summary::-webkit-details-marker{display:none}
+.capd>summary .thumb{width:72px;height:48px;border:1px solid var(--border);border-radius:6px;object-fit:cover;background:#fff;flex:none}
+.capd>summary .grow{flex:1;min-width:0}
+.capd>summary .chev{color:var(--accent);font-weight:600;font-size:14px}
+.capd[open]>summary .thumb{display:none}
+.capd[open]>summary .chev::after{content:"Hide"} .capd:not([open])>summary .chev::after{content:"Show"}
+.capd .tabs{padding:0 12px;margin-bottom:0}
+.cap-p{padding:12px 14px}
+.cap-p figure{margin:0}
+.cap-p .shot{display:block;width:100%;height:auto;border:1px solid var(--border);border-radius:6px;background:#fff}
+.cap-p .copyframe{display:block;width:100%;height:420px;border:1px solid var(--border);border-radius:6px;background:#fff}
+.cap-p .cap-actions{display:flex;gap:6px 16px;flex-wrap:wrap;margin:10px 0 4px;font-size:14px;align-items:center}
+.cap-p .cap-actions button{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;min-height:32px;font-weight:600}
+.cap-p .cap-actions a{font-weight:600;color:var(--accent)}
+.cap-p dl{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr);gap:6px 12px;margin:0;font-size:14px}
+.cap-p dt{color:var(--muted)} .cap-p dd{margin:0;overflow-wrap:anywhere}
+.cap-p pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12.5px;margin:6px 0 0}
+.cap-p pre code{background:none;padding:0}
+.li .th{width:72px;height:48px;border:1px solid var(--border);border-radius:6px;object-fit:cover;background:#fff}
+.li .th.none{display:grid;place-items:center;font-size:11px;color:var(--muted);background:var(--surface-2);text-align:center}
+dialog.full{max-width:min(1100px,calc(100% - 32px))}
+dialog.full .db{max-height:78vh;overflow:auto}
 .fakepage{position:relative;padding:14px;background:#fff;color:#1b1f24;font-size:12px;height:260px;overflow:hidden}
 .fakepage .fh{height:28px;background:#0b3d63;border-radius:4px;margin:-14px -14px 12px}
 .fakepage .r{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e3e6ea}
@@ -173,6 +198,7 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
   .main{padding:16px 16px 96px}
   .split{grid-template-columns:1fr}
   .li{grid-template-columns:48px 1fr;grid-template-areas:"n t" "n s"}
+  .li .th{display:none}
   .li .n{grid-area:n} .li .body{grid-area:t} .li .st{grid-area:s;justify-self:start}
   .q .actions .btn{flex:1}
   .set{flex-direction:row}
@@ -195,7 +221,9 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
     <option value="attention" selected>Attention: approval queue</option>
     <option value="attention-empty">Attention: nothing waiting</option>
     <option value="reports">Site: reports list</option>
-    <option value="thread">Report thread with a draft</option>
+    <option value="thread">Report thread with a draft (screenshot)</option>
+    <option value="thread-copy">Report thread: page copy</option>
+    <option value="thread-part">Report thread: the part</option>
     <option value="decisions">Decisions</option>
     <option value="settings">Site settings (auto-approve off)</option>
     <option value="settings-on">Site settings (auto-approve ON)</option>
@@ -349,11 +377,11 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
     <button role="tab" aria-selected="false">All</button>
   </div>
   <div class="list" role="list">
-    <a class="li" role="listitem" data-go="thread"><span class="n">41</span><span class="body"><span class="t">"Expiring" filter shows people who already lapsed</span><br><span class="meta">Bug · /register · Ada Example · 12 min ago</span></span><span class="st"><span class="tag t-draft">Draft waiting</span></span></a>
-    <a class="li" role="listitem" data-go="thread"><span class="n">44</span><span class="body"><span class="t">Can the export include nationality?</span><br><span class="meta">Feature · /register · Ben Sample · 40 min ago</span></span><span class="st"><span class="tag t-draft">Draft waiting</span></span></a>
-    <a class="li" role="listitem" data-go="thread"><span class="n">39</span><span class="body"><span class="t">Save button hidden under the keyboard on phone</span><br><span class="meta">Bug · /officials/new · Dana Test · yesterday</span></span><span class="st"><span class="tag t-progress">In progress</span></span></a>
-    <a class="li" role="listitem" data-go="thread"><span class="n">37</span><span class="body"><span class="t">What does "pending reference" mean?</span><br><span class="meta">Question · /applications · Eve Placeholder · 2 days ago</span></span><span class="st"><span class="tag t-answered">Answered</span></span></a>
-    <a class="li" role="listitem" data-go="thread"><span class="n">35</span><span class="body"><span class="t">Whole page: dashboard loads slowly in the morning</span><br><span class="meta">Bug · /dashboard · Ada Example · 3 days ago</span></span><span class="st"><span class="tag t-open">Open</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">41</span><img class="th" data-thumb="41" alt=""><span class="body"><span class="t">"Expiring" filter shows people who already lapsed</span><br><span class="meta">Bug · /register · Ada Example · 12 min ago</span></span><span class="st"><span class="tag t-draft">Draft waiting</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">44</span><img class="th" data-thumb="44" alt=""><span class="body"><span class="t">Can the export include nationality?</span><br><span class="meta">Feature · /register · Ben Sample · 40 min ago</span></span><span class="st"><span class="tag t-draft">Draft waiting</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">39</span><img class="th" data-thumb="39" alt=""><span class="body"><span class="t">Save button hidden under the keyboard on phone</span><br><span class="meta">Bug · /officials/new · Dana Test · yesterday</span></span><span class="st"><span class="tag t-progress">In progress</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">37</span><img class="th" data-thumb="37" alt=""><span class="body"><span class="t">What does "pending reference" mean?</span><br><span class="meta">Question · /applications · Eve Placeholder · 2 days ago</span></span><span class="st"><span class="tag t-answered">Answered</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">35</span><span class="th none" aria-hidden="true">Whole page</span><span class="body"><span class="t">Whole page: dashboard loads slowly in the morning</span><br><span class="meta">Bug · /dashboard · Ada Example · 3 days ago</span></span><span class="st"><span class="tag t-open">Open</span></span></a>
   </div>
 </section>
 
@@ -395,21 +423,51 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
       </div>
     </div>
     <div class="stack">
-      <div class="snap">
-        <div class="bar"><span>Snapshot · 390 × 844 · 12:04</span><a href="#">Open full size</a></div>
-        <div class="fakepage" aria-label="Snapshot of the page the user saw">
-          <div class="fh"></div>
-          <b>Officials register</b>
-          <div style="margin:8px 0"><span id="pinned" style="display:inline-block;border:1px solid #c5ccd6;border-radius:14px;padding:3px 10px;position:relative">Expiring</span></div>
-          <div class="r"><span>Ada Example</span><span>IJ · ends 30 Nov</span></div>
-          <div class="r"><span>Fin Sample</span><span>IU · ended 14 Oct</span></div>
-          <div class="r"><span>Gus Fixture</span><span>NRO · ended 2 Oct</span></div>
-          <div class="r"><span>Hana Mock</span><span>IJ · ends 12 Jan</span></div>
+      <details class="capd" id="capd" open>
+        <summary><img class="thumb" data-thumb="41" alt=""><span class="grow">Page when reported<br><span class="meta" style="font-weight:400">Screenshot, page copy and the part</span></span><span class="chev" aria-hidden="true"></span></summary>
+        <div class="tabs" role="tablist" aria-label="Page when reported">
+          <button type="button" role="tab" id="ct-shot" aria-controls="cp-shot" aria-selected="true">Screenshot</button>
+          <button type="button" role="tab" id="ct-copy" aria-controls="cp-copy" aria-selected="false" tabindex="-1">Page copy</button>
+          <button type="button" role="tab" id="ct-part" aria-controls="cp-part" aria-selected="false" tabindex="-1">Part</button>
+          <button type="button" role="tab" id="ct-det" aria-controls="cp-det" aria-selected="false" tabindex="-1">Details</button>
         </div>
-      </div>
-      <div class="card"><h3>Details</h3>
-        <div class="meta">Page <code>/register</code> · route <code>register.index</code><br>Build <code>4b91e2d</code> · Chrome on Android<br>Anchor: button "Expiring"</div>
-      </div>
+        <div class="cap-p" role="tabpanel" id="cp-shot" aria-labelledby="ct-shot">
+          <figure><img class="shot" id="shot" alt="Screenshot of /register as Ada Example saw it, with the Expiring filter outlined as report 41."></figure>
+          <div class="cap-actions"><button type="button" id="outline-tg" aria-pressed="false">Hide the outline</button><button type="button" data-full="shot">Open full size</button></div>
+          <p class="meta">390 &times; 844 at 3&times; &middot; Chrome 131 on Android &middot; 2 Nov 2026 at 12:04 UTC &middot; drawn by the browser: videos, maps and pictures from other sites may be missing.</p>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-copy" aria-labelledby="ct-copy" hidden>
+          <iframe class="copyframe" id="copyframe" sandbox="" title="Copy of the page /register when report 41 was sent"></iframe>
+          <div class="cap-actions"><button type="button" data-full="copy">Open full size</button><a href="#" data-noop>Open the live page</a><a href="#" data-noop>Download HTML</a></div>
+          <p class="meta">Copy of the page&rsquo;s HTML &middot; 180 KB &middot; scripts removed, links do nothing &middot; 2 fields left blank (password and private fields).</p>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-part" aria-labelledby="ct-part" hidden>
+          <dl>
+            <dt>Readable anchor</dt><dd>button &ldquo;Expiring&rdquo;</dd>
+            <dt>Selector</dt><dd><code>main [data-filter="expiring"]</code></dd>
+            <dt>Role and name</dt><dd>button, &ldquo;Expiring&rdquo;, pressed</dd>
+            <dt>Box</dt><dd>x 104, y 116, 92 &times; 28 on the screenshot</dd>
+            <dt>Text</dt><dd>Expiring</dd>
+            <dt>Styles</dt><dd>display inline-flex &middot; #1c2735 on #ecf4ff &middot; 13 px &middot; z-index auto</dd>
+            <dt>Inside</dt><dd><code>main &rsaquo; section.filters &rsaquo; div.chips</code></dd>
+          </dl>
+          <h3 style="margin-top:12px">HTML of the part</h3>
+          <pre><code>&lt;button type="button" class="chip on" data-filter="expiring" aria-pressed="true" wire:click="setFilter('expiring')"&gt;Expiring&lt;/button&gt;</code></pre>
+          <div class="cap-actions"><button type="button" id="copyhtml">Copy</button></div>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-det" aria-labelledby="ct-det" hidden>
+          <dl>
+            <dt>Page</dt><dd><code>/register?filter=expiring</code></dd>
+            <dt>Route</dt><dd><code>register.index</code> &middot; &ldquo;Officials register&rdquo;</dd>
+            <dt>Build</dt><dd><code>4b91e2d</code></dd>
+            <dt>Screen</dt><dd>390 &times; 844 at 3&times;, scrolled 0 px</dd>
+            <dt>Browser</dt><dd>Chrome 131 on Android 15</dd>
+            <dt>Screenshot</dt><dd>Drawn by the browser &middot; 212 KB</dd>
+            <dt>Page copy</dt><dd>180 KB (41 KB gzipped) &middot; 2 fields left blank</dd>
+            <dt>Captured</dt><dd>2 Nov 2026 at 12:04:31 UTC</dd>
+          </dl>
+        </div>
+      </details>
     </div>
   </div>
 </section>
@@ -503,6 +561,11 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
   <div class="df"><button class="btn" id="rej-cancel" type="button">Cancel</button><button class="btn danger" id="rej-ok" type="button">Reject draft</button></div>
 </dialog>
 
+<dialog id="dlg-full" class="full" aria-labelledby="dlg-full-h">
+  <div class="dh row"><h2 id="dlg-full-h" class="grow" style="margin:0">Report 41 &middot; page when reported</h2><button class="btn" type="button" id="full-close">Close</button></div>
+  <div class="db" id="full-body"></div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -515,6 +578,8 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
   function setAuto(on){auto=on;document.getElementById('auto').checked=on;document.getElementById('autobanner').hidden=!on;
     document.getElementById('autodesc').textContent=on?"On: agent replies to users are sent straight away, signed with the connecting person's name.":"Off: every reply an agent writes for a user is kept as a draft until a person approves it.";}
   function show(v){
+    let capTab=null; if(v==='thread-copy'||v==='thread-part'){capTab=v.slice(7); v='thread'} else if(v==='thread'){capTab='shot'}
+    if(capTab){const d=document.getElementById('capd'); d.open=capTab!=='shot'||!matchMedia('(max-width:860px)').matches; selTab(capTab)}
     if(v==='settings-on'){setAuto(true);v='settings'} else if(v==='settings'&&pick.value==='settings'){setAuto(false)}
     views.forEach(x=>{const el=document.getElementById('v-'+x); if(el) el.hidden=(x!==v)});
     const isAuth=(v==='signin'||v==='consent'); shell.hidden=isAuth;
@@ -524,7 +589,6 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
       if(a.dataset.go===base) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
     });
     side.classList.remove('open'); window.scrollTo(0,0);
-    if(v==='thread'){const p=document.getElementById('pinned'); p.classList.add('pin');}
   }
   pick.addEventListener('change',()=>show(pick.value));
   document.addEventListener('click',e=>{
@@ -547,6 +611,36 @@ dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding
   document.getElementById('answer').onclick=()=>toast('Answer recorded: A. The agent will see it.');
   document.getElementById('menu').onclick=()=>{side.classList.toggle('open'); document.getElementById('menu').setAttribute('aria-expanded',side.classList.contains('open'))};
   document.getElementById('theme').onclick=()=>{const r=document.documentElement; const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches); r.dataset.theme=dark?'light':'dark'};
+  // ---- capture panel (capture-design.md section 5): a synthetic screenshot (SVG) and a sandboxed page copy
+  const ROWS=[['Ada Example','IJ · ends 30 Nov'],['Fin Sample','IU · ended 14 Oct'],['Gus Fixture','NRO · ended 2 Oct'],['Hana Mock','IJ · ends 12 Jan']];
+  function shot(marked,crop){
+    const W=390,H=380,chips=['All','Current','Expiring','Lapsed']; let cx=16,cs='',t;
+    chips.forEach(c=>{const w=c.length*8+26,on=c==='Expiring';cs+=`<rect x="${cx}" y="116" width="${w}" height="28" rx="14" fill="${on?'#ecf4ff':'#fff'}" stroke="${on?'#0d2c6c':'#c5ccd6'}"/><text x="${cx+13}" y="135" font-size="13" font-weight="${on?600:400}" fill="#1c2735">${c}</text>`;if(on)t={x:cx,y:116,w:w,h:28};cx+=w+8});
+    let ry=160,rs='';ROWS.forEach(r=>{rs+=`<rect x="16" y="${ry}" width="358" height="44" fill="#fff" stroke="#d9e8fb"/><text x="30" y="${ry+27}" font-size="14" fill="#1c2735">${r[0]}</text><text x="360" y="${ry+27}" font-size="14" fill="#354150" text-anchor="end">${r[1]}</text>`;ry+=44});
+    const mk=marked?`<rect x="${t.x-4}" y="${t.y-4}" width="${t.w+8}" height="${t.h+8}" rx="16" fill="none" stroke="#b42318" stroke-width="3"/><circle cx="${t.x+t.w+4}" cy="${t.y-4}" r="12" fill="#b42318"/><text x="${t.x+t.w+4}" y="${t.y}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">41</text>`:'';
+    const vb=crop?`${t.x-48} ${t.y-48} ${t.w+96} ${t.h+96}`:`0 0 ${W} ${H}`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" font-family="Segoe UI, Arial, sans-serif"><rect width="${W}" height="${H}" fill="#f7faff"/><rect width="${W}" height="56" fill="#0b3d63"/><text x="16" y="34" font-size="15" font-weight="600" fill="#fff">Race Officials</text><text x="16" y="98" font-size="24" font-weight="600" fill="#1c2735">Officials register</text>${cs}${rs}${mk}</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  }
+  const COPY=`<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>body{margin:0;font:14px/20px system-ui,Segoe UI,Arial,sans-serif;background:#f7faff;color:#1c2735}header{height:56px;background:#0b3d63;color:#fff;display:flex;align-items:center;padding:0 16px;font-weight:600}main{padding:16px}h1{font-size:24px;margin:0 0 12px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.chip{border:1px solid #c5ccd6;border-radius:14px;padding:4px 12px;background:#fff}.chip[aria-pressed=true]{background:#ecf4ff;border-color:#0d2c6c;font-weight:600}.rows{background:#fff;border:1px solid #d9e8fb;border-radius:8px}.r{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #d9e8fb;gap:12px}[data-annotatie-target]{outline:3px solid #b42318;outline-offset:2px}input{min-height:36px;width:100%;box-sizing:border-box;background:repeating-linear-gradient(45deg,#eee 0 6px,#fff 6px 12px)}</style></head><body><header>Race Officials</header><main><h1>Officials register</h1><p><input type="text" value="" aria-label="Search (left blank)"></p><div class="chips"><span class="chip">All</span><span class="chip">Current</span><span class="chip" aria-pressed="true" data-annotatie-target>Expiring</span><span class="chip">Lapsed</span></div><div class="rows">${ROWS.map(r=>`<div class="r"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div></main></body></html>`;
+  document.querySelectorAll('[data-thumb]').forEach(i=>i.src=shot(true,true));
+  const shotImg=document.getElementById('shot'); shotImg.src=shot(true,false);
+  document.getElementById('copyframe').srcdoc=COPY;
+  const tg=document.getElementById('outline-tg');
+  tg.onclick=()=>{const hide=tg.getAttribute('aria-pressed')!=='true'; tg.setAttribute('aria-pressed',String(hide)); tg.textContent=hide?'Show the outline':'Hide the outline'; shotImg.src=shot(!hide,false)};
+  const tabs=['shot','copy','part','det'];
+  function selTab(k){tabs.forEach(x=>{const b=document.getElementById('ct-'+x),p=document.getElementById('cp-'+x),on=x===k; b.setAttribute('aria-selected',String(on)); b.tabIndex=on?0:-1; p.hidden=!on})}
+  const tl=document.querySelector('#capd [role=tablist]');
+  tl.addEventListener('click',e=>{const b=e.target.closest('[role=tab]'); if(b) selTab(b.id.slice(3))});
+  tl.addEventListener('keydown',e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return; e.preventDefault(); const cur=tabs.findIndex(x=>document.getElementById('ct-'+x).getAttribute('aria-selected')==='true'); const n=tabs[(cur+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length]; selTab(n); document.getElementById('ct-'+n).focus()});
+  document.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const body=document.getElementById('full-body');
+    body.innerHTML=b.dataset.full==='shot'?'<img alt="" style="display:block;width:min(390px,100%);height:auto;margin:0 auto;border:1px solid var(--border)">':'<iframe sandbox="" title="Copy of the page /register, full size" style="width:min(390px,100%);height:70vh;border:1px solid var(--border);display:block;margin:0 auto;background:#fff"></iframe>';
+    const im=body.querySelector('img'); if(im){im.src=shotImg.src; im.alt=shotImg.alt}
+    const f=body.querySelector('iframe'); if(f) f.srcdoc=COPY;
+    document.getElementById('dlg-full').showModal()});
+  document.getElementById('full-close').onclick=()=>document.getElementById('dlg-full').close();
+  document.getElementById('copyhtml').onclick=()=>toast('HTML of the part copied');
+  document.querySelectorAll('[data-noop]').forEach(a=>a.onclick=e=>{e.preventDefault(); toast('Prototype: not wired')});
   show(pick.value);
 })();
 </script>

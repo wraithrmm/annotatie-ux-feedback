@@ -4,6 +4,9 @@
 
 # Annotatie — technical design (concept, revision 2, 3 Nov 2026)
 
+> **6 Nov 2026:** the snapshot is now a **capture** (screenshot, close-up, page copy, part record), designed in
+> `capture-design.md`, which replaces the Snapshot row in §6, `get_snapshot` in §8 and §9.2 where they differ.
+
 **Annotatie** — "annotate, but cute" (R-329). Revision 2 applies Richard's answers (R-329 → D-512): a
 totally separate deployment, joined to sites only by the JS SDK; AWS; **Annotatie's own OAuth 2.1
 server** for sites, the board and agents alike; no mail to client users for now; repository host to be
@@ -205,6 +208,7 @@ One DynamoDB table (`pk`, `sk`) plus two global secondary indexes; snapshot bodi
 | Message | `ITEM#<itemId>` / `MSG#<ts>#<msgId>` | author (user id), body (Markdown, sanitised on render), **visibility** (client / internal), state (published / draft), via client or token id (internal), edited |
 | Decision | on the Item | question, options (label, text, consequence), recommendation, answer, answered by, answered at |
 | Snapshot | `ITEM#<itemId>` / `SNAP#<id>` | S3 key, size, viewport, scroll, build id, captured at |
+| Capture (6 Nov 2026) | on the Item | the part record and context; S3 keys of the screenshot, marked screenshot, close-up and page copy (`capture-design.md` §1, §7) |
 | OAuth records | `OIDC#<kind>#<id>` | the authorization server's own records (clients, grants, sessions, authorization codes, refresh tokens), through the `node-oidc-provider` DynamoDB adapter, with TTLs |
 | Personal access token | `PAT#<hash>` / `META` | owner, name, sites, scopes, expiry, last used |
 | Audit | `SITE#<id>` / `AUDIT#<ts>` | who, via which token, what, item — internal only |
@@ -268,6 +272,7 @@ Every tool checks the token's sites and scopes.
 | `list_items` | Filter by site, kind, status, page, label, `updated_since`; paginated | read |
 | `get_item` | The item, its messages (internal and client), its decision, its links, snapshot metadata | read |
 | `get_snapshot` | The sanitised snapshot HTML (size-capped) with the selected element marked, plus its anchors and box | snapshot:read |
+| `get_screenshot`, `get_page_html` (6 Nov 2026) | Replace `get_snapshot`: the screenshot or close-up as an MCP image, and the page copy scoped to the part, its surroundings or the page (`capture-design.md` §6) | snapshot:read |
 | `get_changes` | Everything changed since a cursor, so an agent can poll without missing anything | read |
 | `post_message` | Reply on an item: `visibility` internal or client, `draft` true/false (the site's default applies) | reply / reply:client |
 | `set_status` | Change an item's status | status |
@@ -297,6 +302,8 @@ the platform supports the agents' own rule (as `ro-snapshot-comments` already do
 | Passwords and secrets in snapshots | Password inputs and fields marked `data-annotatie-mask` are blanked at capture; a site can turn on **privacy mode**, masking all text in form fields |
 
 ### 9.2 Snapshots
+
+> Superseded where it differs by `capture-design.md` §7–§8 (6 Nov 2026): presigned **POST** with a size range, SSE-S3 rather than KMS, the screenshot masked like the copy.
 
 Captured in the browser (RW-1 §5), gzipped, uploaded straight to S3 with a presigned PUT limited to
 2 MB and the right content type, encrypted with the deployment's KMS key, in a bucket with public access

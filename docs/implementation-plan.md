@@ -4,6 +4,8 @@
 > implementation proposal for a new repository. Nothing is built until you approve this plan. It builds on
 > `platform-design.md` (revision 2), the approved widget design RW-1, and the new portal design PT-1, and
 > changes what this document says it changes in §2. Costs are in `cost-register.md`.
+> **6 Nov 2026:** every report now carries a capture (screenshot, close-up, page copy, part record), seen by
+> the reporter, the reviewer and agents: `capture-design.md` (2.12, RW-1a, phases P2–P5, questions C1–C5).
 
 ## 1. What we're building, in one paragraph
 
@@ -45,6 +47,7 @@ cents (`cost-register.md`).
 | 2.9 | **`annotatie.consulteasy.co.uk` from day one, DNS on Cloudflare (Free), DNS only (grey cloud).** OpenTofu manages the Cloudflare records (the CNAME to CloudFront, ACM validation, and SES DKIM later) with the `cloudflare` provider. The ACM certificate (`us-east-1`) is free | You own the domain and want Cloudflare (5 Nov 2026). $0, and the OAuth issuer and passkeys never have to move. Proxy mode is an option: `cost-register.md` §5 |
 | 2.10 | **Team sign-in is passkeys only in v1**, with one-time recovery codes. Passwords + TOTP come later if anyone needs them | Smaller attack surface; no password hashing (no native Argon2 build) in Lambda |
 | 2.11 | **Lambda code ships as zips built by CI and referenced by OpenTofu** (`filename` + `source_code_hash`). No artefact bucket, no ECR | No storage line, simpler deploys |
+| 2.12 | **Every report carries a capture** (`capture-design.md`, 6 Nov 2026): a screenshot of what the reporter saw, a close-up of the part, a copy of the page's HTML and a part record, all taken when the part is chosen. The reporter sees a preview and can leave it out; reviewers get "Page when reported" in the thread (PT-1); agents get `get_screenshot` (an image) and `get_page_html`. Replaces revision 2's `get_snapshot` | Your request, 6 Nov 2026. Storage only, no fixed cost (`cost-register.md` §4) |
 
 Everything else in revision 2 stands: the three audiences, site assertions (RFC 7523), `node-oidc-provider`,
 MCP discovery and dynamic registration, item kinds, the data model, the security table and the SDK install
@@ -55,7 +58,8 @@ experience.
 | Id | What | Files | Status |
 |---|---|---|---|
 | RW-1 | The widget on a host site: report mode, pins, comment panel, thread, page and "My reports" lists, every error state, phone first | `design/RW-screens.md`, `design/prototype/RW-1-approved-2026-11-03.html` | **Approved** by you, 3 Nov 2026 |
-| PT-1 | **The portal** (revision 2's "board") and the auth pages: sign-in, agent consent, Attention (approval queue, decisions, new from users, unanswered), site reports list, thread with a draft (approve / edit / reject, internal notes, snapshot with the pin), decisions, site settings with the **auto-approve** switch and its confirmation, agents and tokens. Phone layout under 860 px: top bar, drawer, bottom tabs, lists as rows | `design/prototype/PT-1-portal.html` (open it in a browser; the black bar at the top switches screens) | **New, for your review** |
+| PT-1 | **The portal** (revision 2's "board") and the auth pages: sign-in, agent consent, Attention (approval queue, decisions, new from users, unanswered), site reports list, thread with a draft (approve / edit / reject, internal notes, snapshot with the pin), decisions, site settings with the **auto-approve** switch and its confirmation, agents and tokens. Phone layout under 860 px: top bar, drawer, bottom tabs, lists as rows | `design/prototype/PT-1-portal.html` (open it in a browser; the black bar at the top switches screens); frozen copy `design/prototype/PT-1-approved-2026-11-06.html` | **Approved 6 Nov 2026**, including the thread's "Page when reported" panel |
+| RW-1a | **Amendment to RW-1: the capture.** The preview in the comment panel, "See what will be sent" (Screenshot / Page copy), leaving it out, the failure notes, and "Sent with this report" in the thread. PT-1's thread gains the "Page when reported" panel (Screenshot, Page copy, Part, Details) and the reports list gains close-up thumbnails | `capture-design.md` §4–§5, `design/RW-screens.md` (Amendment A1), `design/prototype/RW-1a-capture.html`, `design/prototype/PT-1-portal.html` | New, 6 Nov 2026: review owed |
 
 PT-1 decisions you may want to change:
 - **Approve and send** is the primary action on every draft, and **Edit** sends your edited text. **Reject**
@@ -205,10 +209,10 @@ deployment.
 |---|---|---|
 | **P0 Skeleton and pipeline** | Repo, workspaces, bootstrap root, `live` root with `static` + one health Lambda behind CloudFront and API GW, both workflows, budget, alarms | A merge to `main` deploys with no secrets; `/api/health` is 200; **a week's Cost Explorer shows ≈ $0 idle**. This is the cost proof before anything else is built |
 | **P1 Auth** | `node-oidc-provider` on Lambda with the DynamoDB adapter, SSM signing keys and JWKS, discovery (RFC 8414, 9728), code + PKCE, dynamic client registration, resource indicators, revocation, passkeys + recovery codes, invites, consent screen (PT-1) | The portal client signs in with a passkey; a test MCP client registers, gets consent and receives a token for audience `mcp`; refresh rotation with reuse detection passes its tests |
-| **P2 API, data and the approval gate** | Data model (revision 2 §6 + message `state`, `approvedBy`, `autoApprove`, audit), every API route, `decideMessageState`, publish/reject, snapshots via presigned PUT/GET, rate limits | Every row of §4 has a passing test; a user token can't read a draft, an internal note or another site's anything (negative tests) |
-| **P3 Portal (PT-1)** | Every PT-1 screen against the real API: Attention, reports, thread with draft approve/edit/reject, snapshot in a sandboxed iframe, decisions, settings with auto-approve, agents and tokens | Playwright runs the approve, edit, reject and auto-approve flows at 390 px and desktop |
-| **P4 Widget and server SDK** | `sdk-browser` from RW-1 (capture layer, anchoring, pins, snapshot, threads, theme tokens), `sdk-server-node`, the assertion exchange, a fixture host site for tests | End to end: a fixture user reports → an agent drafts → you approve in the portal → the user sees the reply on the pin. With auto-approve on, the reply arrives with no approval |
-| **P5 MCP server** | Tools from revision 2 §8, plus `state` in every result, `get_changes` for publish/reject events, untrusted-content wrapping | Claude Code connects with only the URL (discovery → registration → browser consent), lists items, drafts a reply and sees it waiting for approval |
+| **P2 API, data and the approval gate** | Data model (revision 2 §6 + message `state`, `approvedBy`, `autoApprove`, audit), every API route, `decideMessageState`, publish/reject, snapshots via presigned PUT/GET, rate limits; the capture: presigned POST uploads, confirm and server re-sanitising, the `pending/` lifecycle rule (`capture-design.md` §7) | Every row of §4 has a passing test; a user token can't read a draft, an internal note or another site's anything (negative tests) |
+| **P3 Portal (PT-1)** | Every PT-1 screen against the real API: Attention, reports, thread with draft approve/edit/reject, snapshot in a sandboxed iframe, decisions, settings with auto-approve, agents and tokens; the "Page when reported" panel and list thumbnails (`capture-design.md` §5) | Playwright runs the approve, edit, reject and auto-approve flows at 390 px and desktop |
+| **P4 Widget and server SDK** | `sdk-browser` from RW-1 (capture layer, anchoring, pins, snapshot, threads, theme tokens), `sdk-server-node`, the assertion exchange, a fixture host site for tests; the capture at selection, masking, preview and leave-out (`capture-design.md` §2–§4) | End to end: a fixture user reports → an agent drafts → you approve in the portal → the user sees the reply on the pin. With auto-approve on, the reply arrives with no approval |
+| **P5 MCP server** | Tools from revision 2 §8, plus `state` in every result, `get_changes` for publish/reject events, untrusted-content wrapping; `get_screenshot` (MCP image) and `get_page_html` in place of `get_snapshot` (`capture-design.md` §6) | Claude Code connects with only the URL (discovery → registration → browser consent), lists items, drafts a reply and sees it waiting for approval |
 | **P6 First real site** | `sdk-php` Laravel package; installing it on a site you choose | Your chosen site shows the widget to permitted users only, and to no one else (no tag, no request) |
 | **Later** | SES invites and digests (DKIM records in Cloudflare), Cloudflare proxy mode, KMS option, passwords + TOTP, privacy mode | When you ask |
 
@@ -235,12 +239,13 @@ If Race Officials is the first real site, P6 is work in the `race-fficials` repo
 |---|---|---|
 | Q1 | **Where does the repo live?** A new GitHub repo, named, under which owner, private or public, and cloned to which folder? | `annotatie`, private, under your account, cloned to `C:\Users\Wraith\repos\annotatie`. The plan and designs stay here and get copied into its `docs/` |
 | Q2 | **The target AWS account and region.** Is it a fresh account (C-14), and which region? | A dedicated account under your organisation; `eu-west-2` (London) for UK data residency |
-| Q3 | **Approve PT-1** as the portal design, or tell me what to change | — |
+| Q3 | ~~Approve PT-1~~ **Answered 6 Nov 2026: approved**, with the capture panel | — |
 | Q4 | ~~Domain~~ **Answered 5 Nov 2026:** a subdomain of `consulteasy.co.uk`, DNS on Cloudflare | — |
 | Q4a | **Which subdomain?** | `annotatie.consulteasy.co.uk` |
 | Q4b | **Is `consulteasy.co.uk` already on Cloudflare's nameservers?** If not, the whole zone has to move (Free plan), and your email records must be copied first | Move it before P0 and check the MX/SPF/DKIM records after the switch |
 | Q4c | **Cloudflare DNS only, or proxy in front?** (`cost-register.md` §5) | DNS only now; proxy later only if there's abuse |
-| Q5 | **Signing key:** SSM (free) or KMS ($1/month, key never leaves the HSM)? | SSM now; KMS when there's a paying client |
-| Q6 | **Team sign-in:** passkeys only in v1? | Yes |
-| Q7 | **Auto-approve time limit:** should the flag switch itself off after a set time? | Optional per site, default none |
+| Q5 | ~~Signing key~~ **Answered 6 Nov 2026: SSM now**; KMS when there's a paying client | — |
+| Q6 | ~~Team sign-in~~ **Answered 6 Nov 2026: passkeys only in v1** | — |
+| Q7 | ~~Auto-approve time limit~~ **Answered 6 Nov 2026: optional per site, default none** | — |
 | Q8 | **Go-ahead to implement**, starting with P0 (the cost proof) | Yes, P0 first, then pause to look at a week of real cost before P1 |
+| C1–C5 | **The capture's open questions** (may a reporter leave it out; offer a real screen capture; covering parts; visible part or whole page; who sees captures) | In `capture-design.md` §11, each with a recommendation |

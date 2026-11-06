@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Annotatie portal</title>
+<!-- Concept design PT-1: the Annotatie portal (the "board" of platform-design.md). Not approved for
+     implementation until you approve it. Synthetic data only. Self-contained: no network requests. -->
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#fff; --surface-2:#f0f2f5; --border:#d9dde3; --text:#1b1f24; --muted:#5b6470;
+  --accent:#3b4cca; --accent-ink:#fff; --accent-soft:#e8ebfb;
+  --open:#1f6feb; --open-soft:#e3eeff; --answered:#7a4cc2; --answered-soft:#f0e8fb;
+  --progress:#b26b00; --progress-soft:#fdf1dc; --resolved:#2f7d4f; --resolved-soft:#e2f3e8;
+  --draft:#9a3412; --draft-soft:#fde8de; --danger:#b42318; --danger-soft:#fde4e1;
+  --internal:#5b6470; --internal-soft:#eef0f3;
+  --radius:10px; --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; font-size:15px; line-height:1.45;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1216; --surface:#171b21; --surface-2:#1e232b; --border:#2c333d; --text:#e7eaee; --muted:#9aa4b1;
+    --accent:#8b97ff; --accent-ink:#0f1216; --accent-soft:#232a52;
+    --open:#6ea8ff; --open-soft:#16263f; --answered:#c3a0f5; --answered-soft:#2a1f3d;
+    --progress:#f0b45a; --progress-soft:#33260f; --resolved:#6fcf97; --resolved-soft:#13301f;
+    --draft:#ff9a6b; --draft-soft:#3a1c10; --danger:#ff8a80; --danger-soft:#3b1512;
+    --internal:#9aa4b1; --internal-soft:#222831;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1216; --surface:#171b21; --surface-2:#1e232b; --border:#2c333d; --text:#e7eaee; --muted:#9aa4b1;
+  --accent:#8b97ff; --accent-ink:#0f1216; --accent-soft:#232a52;
+  --open:#6ea8ff; --open-soft:#16263f; --answered:#c3a0f5; --answered-soft:#2a1f3d;
+  --progress:#f0b45a; --progress-soft:#33260f; --resolved:#6fcf97; --resolved-soft:#13301f;
+  --draft:#ff9a6b; --draft-soft:#3a1c10; --danger:#ff8a80; --danger-soft:#3b1512;
+  --internal:#9aa4b1; --internal-soft:#222831;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text)}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* prototype chrome: state picker (not part of the product) */
+.proto{position:sticky;top:0;z-index:50;background:#111;color:#eee;font-size:13px;padding:6px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.proto select,.proto button{background:#222;color:#eee;border:1px solid #444;border-radius:6px;padding:3px 8px}
+.proto b{color:#ffcf6b;font-weight:600}
+
+/* app shell */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:calc(100vh - 34px)}
+.app > div{min-width:0}
+.side{background:var(--surface);border-right:1px solid var(--border);padding:16px 12px;display:flex;flex-direction:column;gap:4px}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:17px;padding:4px 8px 14px}
+.brand i{width:26px;height:26px;border-radius:8px;background:var(--accent);display:inline-grid;place-items:center;color:var(--accent-ink);font-style:normal;font-size:14px}
+.nav-h{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:14px 8px 4px}
+.nav a{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-radius:8px;text-decoration:none;color:var(--text);min-height:40px}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav a:hover{background:var(--surface-2)}
+.count{min-width:22px;height:22px;padding:0 7px;border-radius:11px;background:var(--surface-2);font-size:12px;display:inline-grid;place-items:center;color:var(--muted)}
+.count.hot{background:var(--draft-soft);color:var(--draft);font-weight:700}
+.side .me{margin-top:auto;padding:10px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+.main{padding:24px 32px 64px;min-width:0}
+.topbar{display:none}
+h1{font-size:24px;margin:0 0 4px} h2{font-size:18px;margin:0 0 10px} h3{font-size:15px;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 20px}
+.crumbs{font-size:13px;color:var(--muted);margin-bottom:6px}
+
+/* components */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.btn{border:1px solid var(--border);background:var(--surface);border-radius:8px;padding:8px 14px;min-height:40px;cursor:pointer;font-weight:600}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:var(--danger)}
+.btn.ghost{border-color:transparent;background:transparent}
+.tag{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.t-open{background:var(--open-soft);color:var(--open)} .t-answered{background:var(--answered-soft);color:var(--answered)}
+.t-progress{background:var(--progress-soft);color:var(--progress)} .t-resolved{background:var(--resolved-soft);color:var(--resolved)}
+.t-draft{background:var(--draft-soft);color:var(--draft)} .t-internal{background:var(--internal-soft);color:var(--internal)}
+.t-client{background:var(--open-soft);color:var(--open)}
+.kind{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.meta{font-size:13px;color:var(--muted)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;overflow-x:auto}
+.tabs button{border:0;background:none;padding:10px 12px;border-bottom:3px solid transparent;cursor:pointer;color:var(--muted);font-weight:600;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--accent);border-color:var(--accent)}
+.banner{border-radius:var(--radius);padding:12px 14px;display:flex;gap:12px;align-items:flex-start;margin-bottom:16px;border:1px solid}
+.banner.warn{background:var(--draft-soft);border-color:var(--draft);color:var(--text)}
+.banner.info{background:var(--accent-soft);border-color:var(--accent)}
+.banner b{display:block}
+.ico{font-weight:800;width:22px;height:22px;flex:none;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:var(--draft)}
+.banner.info .ico{background:var(--accent)}
+
+/* lists = rows, never a sideways table (MOB-r1 spirit) */
+.list{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.li{display:grid;grid-template-columns:40px 72px 1fr auto;gap:12px;align-items:center;padding:12px 16px;border-top:1px solid var(--border);text-decoration:none;color:inherit;cursor:pointer}
+.li:first-child{border-top:0}
+.li:hover{background:var(--surface-2)}
+.li .n{font-weight:700;color:var(--muted)}
+.li .t{font-weight:600}
+
+/* approval queue */
+.q{border-left:4px solid var(--draft)}
+.q .from{background:var(--surface-2);border-radius:8px;padding:10px 12px;margin:10px 0;font-size:14px}
+.q .draft{border:1px dashed var(--draft);border-radius:8px;padding:10px 12px;font-size:14px}
+.q .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* thread */
+.split{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px}
+.msg{border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;background:var(--surface)}
+.msg.internal{background:var(--internal-soft);border-style:solid}
+.msg.drafted{border:2px dashed var(--draft);background:var(--surface)}
+.msg header{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.msg header .who{font-weight:700}
+.av{width:28px;height:28px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;font-weight:700;background:var(--surface-2)}
+.via{font-size:12px;color:var(--muted)}
+.compose{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:12px}
+.compose textarea{width:100%;min-height:90px;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--bg)}
+.seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg label{padding:6px 12px;cursor:pointer;font-size:14px;min-height:36px;display:flex;align-items:center}
+.seg input{position:absolute;opacity:0}
+.seg input:checked+span{font-weight:700;color:var(--accent)}
+.seg label:has(input:checked){background:var(--accent-soft)}
+.snap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+.snap .bar{padding:8px 12px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border);display:flex;justify-content:space-between}
+/* capture panel: "Page when reported" (capture-design.md section 5) */
+.capd{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden}
+.capd>summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;gap:12px;align-items:center;font-weight:700;min-height:44px}
+.capd>summary::-webkit-details-marker{display:none}
+.capd>summary .thumb{width:72px;height:48px;border:1px solid var(--border);border-radius:6px;object-fit:cover;background:#fff;flex:none}
+.capd>summary .grow{flex:1;min-width:0}
+.capd>summary .chev{color:var(--accent);font-weight:600;font-size:14px}
+.capd[open]>summary .thumb{display:none}
+.capd[open]>summary .chev::after{content:"Hide"} .capd:not([open])>summary .chev::after{content:"Show"}
+.capd .tabs{padding:0 12px;margin-bottom:0}
+.cap-p{padding:12px 14px}
+.cap-p figure{margin:0}
+.cap-p .shot{display:block;width:100%;height:auto;border:1px solid var(--border);border-radius:6px;background:#fff}
+.cap-p .copyframe{display:block;width:100%;height:420px;border:1px solid var(--border);border-radius:6px;background:#fff}
+.cap-p .cap-actions{display:flex;gap:6px 16px;flex-wrap:wrap;margin:10px 0 4px;font-size:14px;align-items:center}
+.cap-p .cap-actions button{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;min-height:32px;font-weight:600}
+.cap-p .cap-actions a{font-weight:600;color:var(--accent)}
+.cap-p dl{display:grid;grid-template-columns:minmax(0,9rem) minmax(0,1fr);gap:6px 12px;margin:0;font-size:14px}
+.cap-p dt{color:var(--muted)} .cap-p dd{margin:0;overflow-wrap:anywhere}
+.cap-p pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:12.5px;margin:6px 0 0}
+.cap-p pre code{background:none;padding:0}
+.li .th{width:72px;height:48px;border:1px solid var(--border);border-radius:6px;object-fit:cover;background:#fff}
+.li .th.none{display:grid;place-items:center;font-size:11px;color:var(--muted);background:var(--surface-2);text-align:center}
+dialog.full{max-width:min(1100px,calc(100% - 32px))}
+dialog.full .db{max-height:78vh;overflow:auto}
+.fakepage{position:relative;padding:14px;background:#fff;color:#1b1f24;font-size:12px;height:260px;overflow:hidden}
+.fakepage .fh{height:28px;background:#0b3d63;border-radius:4px;margin:-14px -14px 12px}
+.fakepage .r{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #e3e6ea}
+.pin{position:absolute;outline:3px solid #b42318;outline-offset:2px;border-radius:4px}
+.pin::after{content:"41";position:absolute;top:-14px;right:-14px;background:#b42318;color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-weight:700;font-size:12px}
+
+/* decisions */
+.opt{border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.opt.rec{border-color:var(--accent);background:var(--accent-soft)}
+.opt input{margin-top:4px;width:18px;height:18px}
+
+/* settings */
+.set{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-top:1px solid var(--border)}
+.set:first-of-type{border-top:0}
+.switch{position:relative;width:52px;height:30px;flex:none}
+.switch input{opacity:0;width:100%;height:100%;margin:0;cursor:pointer;position:relative;z-index:1}
+.switch span{position:absolute;inset:0;border-radius:15px;background:var(--border);transition:.15s}
+.switch span::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:.15s}
+.switch input:checked+span{background:var(--draft)}
+.switch input:checked+span::after{left:25px}
+code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:13px}
+
+/* dialog */
+dialog{border:0;border-radius:14px;padding:0;max-width:520px;width:calc(100% - 32px);background:var(--surface);color:var(--text);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+dialog::backdrop{background:rgba(10,12,16,.55)}
+dialog .dh{padding:18px 20px 0} dialog .db{padding:10px 20px} dialog .df{padding:12px 20px 18px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:4px;margin:10px 0}
+.field input[type=text],.field input[type=password],.field input[type=email]{border:1px solid var(--border);border-radius:8px;padding:9px 10px;background:var(--bg);min-height:42px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:600;display:none;z-index:60;max-width:calc(100% - 32px)}
+
+/* auth pages (own origin, no shell) */
+.auth{min-height:calc(100vh - 34px);display:grid;place-items:center;padding:24px 16px}
+.auth .card{width:100%;max-width:420px;padding:24px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px;margin:14px 0}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--border)}
+.check{display:flex;gap:10px;align-items:flex-start;padding:8px 0}
+.check input{width:20px;height:20px;margin-top:2px}
+
+/* phone: shell becomes top bar + drawer + bottom tabs; split stacks */
+@media (max-width: 860px){
+  .app{grid-template-columns:1fr}
+  .side{position:fixed;inset:34px 0 0 0;z-index:40;transform:translateX(-100%);transition:transform .2s;width:min(300px,85vw);box-shadow:0 0 40px rgba(0,0,0,.3)}
+  .side.open{transform:none}
+  .topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:34px;z-index:30}
+  .topbar .t{font-weight:700;flex:1}
+  .main{padding:16px 16px 96px}
+  .split{grid-template-columns:1fr}
+  .li{grid-template-columns:48px 1fr;grid-template-areas:"n t" "n s"}
+  .li .th{display:none}
+  .li .n{grid-area:n} .li .body{grid-area:t} .li .st{grid-area:s;justify-self:start}
+  .q .actions .btn{flex:1}
+  .set{flex-direction:row}
+  h1{font-size:21px}
+  .bottomtabs{display:flex}
+}
+.bottomtabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);z-index:35}
+.bottomtabs a{flex:1;text-align:center;padding:10px 4px 12px;font-size:12px;text-decoration:none;color:var(--muted);min-height:56px;font-weight:600}
+.bottomtabs a[aria-current="page"]{color:var(--accent)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="proto" role="region" aria-label="Prototype controls">
+  <b>PT-1 prototype</b>
+  <label>Screen <select id="pick" aria-label="Screen">
+    <option value="signin">Sign in (auth origin)</option>
+    <option value="consent">Agent consent (MCP sign-in)</option>
+    <option value="attention" selected>Attention: approval queue</option>
+    <option value="attention-empty">Attention: nothing waiting</option>
+    <option value="reports">Site: reports list</option>
+    <option value="thread">Report thread with a draft (screenshot)</option>
+    <option value="thread-copy">Report thread: page copy</option>
+    <option value="thread-part">Report thread: the part</option>
+    <option value="decisions">Decisions</option>
+    <option value="settings">Site settings (auto-approve off)</option>
+    <option value="settings-on">Site settings (auto-approve ON)</option>
+    <option value="agents">Agents and tokens</option>
+  </select></label>
+  <button id="theme" type="button">Toggle dark</button>
+  <span>Resize under 860 px for the phone layout.</span>
+</div>
+
+<!-- ========== AUTH PAGES (served from /oauth, no app shell) ========== -->
+<section id="v-signin" class="auth" hidden>
+  <div class="card">
+    <div class="brand"><i>A</i> Annotatie</div>
+    <h1>Sign in</h1>
+    <p class="sub">To the Annotatie board. Invite only.</p>
+    <button class="btn primary" style="width:100%" type="button">Sign in with a passkey</button>
+    <div class="or">or</div>
+    <div class="field"><label for="em">Email</label><input id="em" type="email" autocomplete="username" value="sam.okafor@example.com"></div>
+    <div class="field"><label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" value="••••••••••••"></div>
+    <div class="field"><label for="otp">6-digit code from your authenticator app</label><input id="otp" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="123 456"></div>
+    <button class="btn" style="width:100%" type="button">Sign in</button>
+    <p class="meta" style="margin-top:14px">No account? Ask an owner for an invite link.</p>
+  </div>
+</section>
+
+<section id="v-consent" class="auth" hidden>
+  <div class="card">
+    <div class="brand"><i>A</i> Annotatie</div>
+    <h1>Allow an agent?</h1>
+    <p class="sub"><b>Claude Code on WORKSTATION-7</b> is asking to act <b>as you</b> on the board. Anything it writes is signed with your name.</p>
+    <h3>Sites it may use</h3>
+    <label class="check"><input type="checkbox" checked> Race Officials (staging)</label>
+    <label class="check"><input type="checkbox"> Harbour Booking</label>
+    <h3 style="margin-top:12px">What it may do</h3>
+    <label class="check"><input type="checkbox" checked disabled> Read reports, threads and decisions <span class="meta">(always)</span></label>
+    <label class="check"><input type="checkbox" checked> Write internal notes and drafts</label>
+    <label class="check"><input type="checkbox" checked> Change statuses</label>
+    <label class="check"><input type="checkbox" checked> Raise decisions for you</label>
+    <label class="check"><input type="checkbox" checked> Open snapshots</label>
+    <div class="banner info" style="margin-top:12px"><span class="ico">i</span><div><b>It can't reach your users directly.</b>Its replies to a site's users wait for your approval, unless you turn on auto-approve for that site.</div></div>
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn" type="button">Deny</button>
+      <button class="btn primary" type="button">Allow</button>
+    </div>
+    <p class="meta">You can revoke this at any time under Agents and tokens.</p>
+  </div>
+</section>
+
+<!-- ========== BOARD SHELL ========== -->
+<div id="shell" class="app" hidden>
+  <nav class="side" id="side" aria-label="Board">
+    <div class="brand"><i>A</i> Annotatie</div>
+    <div class="nav">
+      <a href="#" data-go="attention" aria-current="page"><span>Attention</span><span class="count hot" id="cnt-att">5</span></a>
+    </div>
+    <div class="nav-h">Sites</div>
+    <div class="nav">
+      <a href="#" data-go="reports"><span>Race Officials</span><span class="count hot">4</span></a>
+      <a href="#" data-go="reports"><span>Harbour Booking</span><span class="count">1</span></a>
+    </div>
+    <div class="nav-h">Race Officials</div>
+    <div class="nav">
+      <a href="#" data-go="reports"><span>Reports</span><span class="count">12</span></a>
+      <a href="#" data-go="decisions"><span>Decisions</span><span class="count hot">1</span></a>
+      <a href="#" data-go="settings"><span>Settings</span><span></span></a>
+    </div>
+    <div class="nav-h">You</div>
+    <div class="nav">
+      <a href="#" data-go="agents"><span>Agents and tokens</span><span class="count">2</span></a>
+    </div>
+    <div class="me">Sam Okafor · owner<br><a href="#" data-go="signin">Sign out</a></div>
+  </nav>
+
+  <div>
+    <div class="topbar">
+      <button class="btn ghost" id="menu" aria-label="Open navigation" aria-expanded="false" type="button">☰</button>
+      <span class="t" id="tb-title">Attention</span>
+      <span class="count hot">5</span>
+    </div>
+
+    <main class="main" id="main">
+
+<!-- Attention -->
+<section id="v-attention" hidden>
+  <h1>Attention</h1>
+  <p class="sub">Everything across your sites that is waiting for a person.</p>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true">To approve <span class="count hot">3</span></button>
+    <button role="tab" aria-selected="false">Decisions <span class="count">1</span></button>
+    <button role="tab" aria-selected="false">New from users <span class="count">1</span></button>
+    <button role="tab" aria-selected="false">Unanswered <span class="count">0</span></button>
+  </div>
+  <div class="stack" id="queue">
+    <article class="card q" data-q="1">
+      <div class="row"><span class="kind">Race Officials · Report 41</span><span class="tag t-draft">Draft waiting for you</span><span class="grow"></span><span class="meta">12 min ago</span></div>
+      <h3 style="margin-top:6px">"Expiring" filter shows people who already lapsed</h3>
+      <div class="from"><b>Ada Example</b> wrote · Bug · on <code>/register</code><br>When I pick Expiring in the filter I also get two people whose accreditation ended last month.</div>
+      <div class="meta">Drafted by an agent, to send as <b>Sam Okafor</b>:</div>
+      <div class="draft">Thanks, Ada. You're right: the filter counted from the start of the month rather than today. That's fixed on staging now, so the list should show only people whose accreditation ends in the next 90 days. Let me know if you still see anyone who has lapsed.</div>
+      <div class="actions">
+        <button class="btn primary" data-approve type="button">Approve and send</button>
+        <button class="btn" data-go="thread" type="button">Edit</button>
+        <button class="btn danger" data-reject type="button">Reject</button>
+      </div>
+    </article>
+    <article class="card q" data-q="2">
+      <div class="row"><span class="kind">Race Officials · Report 44</span><span class="tag t-draft">Draft waiting for you</span><span class="grow"></span><span class="meta">40 min ago</span></div>
+      <h3 style="margin-top:6px">Can the export include nationality?</h3>
+      <div class="from"><b>Ben Sample</b> wrote · Feature · on <code>/register</code><br>Could Export also include the nationality column? We filter on it afterwards.</div>
+      <div class="meta">Drafted by an agent, to send as <b>Sam Okafor</b>:</div>
+      <div class="draft">Good idea, Ben. We'll add nationality to the export and reply here when it's on staging.</div>
+      <div class="actions">
+        <button class="btn primary" data-approve type="button">Approve and send</button>
+        <button class="btn" data-go="thread" type="button">Edit</button>
+        <button class="btn danger" data-reject type="button">Reject</button>
+      </div>
+    </article>
+    <article class="card q" data-q="3">
+      <div class="row"><span class="kind">Harbour Booking · Report 7</span><span class="tag t-draft">Draft waiting for you</span><span class="grow"></span><span class="meta">2 h ago</span></div>
+      <h3 style="margin-top:6px">Which date format should bookings use?</h3>
+      <div class="from"><b>Chloe Demo</b> wrote · Question · on <code>/bookings/new</code><br>Should we type dates as 05/11 or 11/05?</div>
+      <div class="meta">Drafted by an agent, to send as <b>Sam Okafor</b>:</div>
+      <div class="draft">Day first: 05/11/2026 is 5 November. The calendar picker fills it in for you as well.</div>
+      <div class="actions">
+        <button class="btn primary" data-approve type="button">Approve and send</button>
+        <button class="btn" data-go="thread" type="button">Edit</button>
+        <button class="btn danger" data-reject type="button">Reject</button>
+      </div>
+    </article>
+  </div>
+</section>
+
+<section id="v-attention-empty" hidden>
+  <h1>Attention</h1>
+  <p class="sub">Everything across your sites that is waiting for a person.</p>
+  <div class="card" style="text-align:center;padding:40px 16px">
+    <h2>Nothing is waiting for you</h2>
+    <p class="meta">No drafts to approve, no decisions to answer, and every report has a reply.</p>
+  </div>
+</section>
+
+<!-- Reports list -->
+<section id="v-reports" hidden>
+  <div class="crumbs">Race Officials</div>
+  <h1>Reports</h1>
+  <p class="sub">12 reports · 4 need attention</p>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true">Open and active</button>
+    <button role="tab" aria-selected="false">Waiting for approval <span class="count hot">2</span></button>
+    <button role="tab" aria-selected="false">Resolved</button>
+    <button role="tab" aria-selected="false">All</button>
+  </div>
+  <div class="list" role="list">
+    <a class="li" role="listitem" data-go="thread"><span class="n">41</span><img class="th" data-thumb="41" alt=""><span class="body"><span class="t">"Expiring" filter shows people who already lapsed</span><br><span class="meta">Bug · /register · Ada Example · 12 min ago</span></span><span class="st"><span class="tag t-draft">Draft waiting</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">44</span><img class="th" data-thumb="44" alt=""><span class="body"><span class="t">Can the export include nationality?</span><br><span class="meta">Feature · /register · Ben Sample · 40 min ago</span></span><span class="st"><span class="tag t-draft">Draft waiting</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">39</span><img class="th" data-thumb="39" alt=""><span class="body"><span class="t">Save button hidden under the keyboard on phone</span><br><span class="meta">Bug · /officials/new · Dana Test · yesterday</span></span><span class="st"><span class="tag t-progress">In progress</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">37</span><img class="th" data-thumb="37" alt=""><span class="body"><span class="t">What does "pending reference" mean?</span><br><span class="meta">Question · /applications · Eve Placeholder · 2 days ago</span></span><span class="st"><span class="tag t-answered">Answered</span></span></a>
+    <a class="li" role="listitem" data-go="thread"><span class="n">35</span><span class="th none" aria-hidden="true">Whole page</span><span class="body"><span class="t">Whole page: dashboard loads slowly in the morning</span><br><span class="meta">Bug · /dashboard · Ada Example · 3 days ago</span></span><span class="st"><span class="tag t-open">Open</span></span></a>
+  </div>
+</section>
+
+<!-- Thread -->
+<section id="v-thread" hidden>
+  <div class="crumbs"><a href="#" data-go="reports">Race Officials · Reports</a></div>
+  <div class="row"><h1 class="grow">Report 41: "Expiring" filter shows people who already lapsed</h1></div>
+  <div class="row" style="margin:6px 0 18px">
+    <span class="tag t-open">Open</span><span class="meta">Bug · <code>/register</code> · button "Expiring" · reported by Ada Example</span>
+    <span class="grow"></span>
+    <label class="meta" for="st">Status</label>
+    <select id="st" class="btn"><option>Open</option><option>Answered</option><option>In progress</option><option>Waiting on us</option><option>Waiting on user</option><option>Resolved</option></select>
+  </div>
+  <div class="split">
+    <div class="stack">
+      <div class="msg"><header><span class="av">AE</span><span class="who">Ada Example</span><span class="tag t-client">User</span><span class="meta">12:04</span></header>
+        When I pick Expiring in the filter I also get two people whose accreditation ended last month.</div>
+      <div class="msg internal"><header><span class="av">SO</span><span class="who">Sam Okafor</span><span class="tag t-internal">Internal note</span><span class="via">via Claude Code on WORKSTATION-7</span><span class="meta">12:09</span></header>
+        Reproduced from the snapshot. <code>expiringScope()</code> uses the start of the month. Fixed in commit 4be1c0a and deployed to staging at 12:14.</div>
+      <div class="msg drafted" id="draftmsg"><header><span class="av">SO</span><span class="who">Sam Okafor</span><span class="tag t-draft">Draft · user can't see it yet</span><span class="via">via Claude Code on WORKSTATION-7</span><span class="meta">12:15</span></header>
+        <div id="drafttext">Thanks, Ada. You're right: the filter counted from the start of the month rather than today. That's fixed on staging now, so the list should show only people whose accreditation ends in the next 90 days. Let me know if you still see anyone who has lapsed.</div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn primary" data-approve type="button">Approve and send</button>
+          <button class="btn" type="button" id="editdraft">Edit</button>
+          <button class="btn danger" data-reject type="button">Reject</button>
+        </div>
+      </div>
+      <div class="compose">
+        <div class="row" style="margin-bottom:8px">
+          <span class="meta">Write</span>
+          <div class="seg" role="radiogroup" aria-label="Who sees it">
+            <label><input type="radio" name="vis" checked><span>Internal note</span></label>
+            <label><input type="radio" name="vis"><span>Reply to the user</span></label>
+          </div>
+        </div>
+        <label class="sr" for="cmp">Message</label>
+        <textarea id="cmp" placeholder="Only people on the board will see an internal note."></textarea>
+        <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn primary" type="button">Post</button></div>
+      </div>
+    </div>
+    <div class="stack">
+      <details class="capd" id="capd" open>
+        <summary><img class="thumb" data-thumb="41" alt=""><span class="grow">Page when reported<br><span class="meta" style="font-weight:400">Screenshot, page copy and the part</span></span><span class="chev" aria-hidden="true"></span></summary>
+        <div class="tabs" role="tablist" aria-label="Page when reported">
+          <button type="button" role="tab" id="ct-shot" aria-controls="cp-shot" aria-selected="true">Screenshot</button>
+          <button type="button" role="tab" id="ct-copy" aria-controls="cp-copy" aria-selected="false" tabindex="-1">Page copy</button>
+          <button type="button" role="tab" id="ct-part" aria-controls="cp-part" aria-selected="false" tabindex="-1">Part</button>
+          <button type="button" role="tab" id="ct-det" aria-controls="cp-det" aria-selected="false" tabindex="-1">Details</button>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-shot" aria-labelledby="ct-shot">
+          <figure><img class="shot" id="shot" alt="Screenshot of /register as Ada Example saw it, with the Expiring filter outlined as report 41."></figure>
+          <div class="cap-actions"><button type="button" id="outline-tg" aria-pressed="false">Hide the outline</button><button type="button" data-full="shot">Open full size</button></div>
+          <p class="meta">390 &times; 844 at 3&times; &middot; Chrome 131 on Android &middot; 2 Nov 2026 at 12:04 UTC &middot; drawn by the browser: videos, maps and pictures from other sites may be missing.</p>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-copy" aria-labelledby="ct-copy" hidden>
+          <iframe class="copyframe" id="copyframe" sandbox="" title="Copy of the page /register when report 41 was sent"></iframe>
+          <div class="cap-actions"><button type="button" data-full="copy">Open full size</button><a href="#" data-noop>Open the live page</a><a href="#" data-noop>Download HTML</a></div>
+          <p class="meta">Copy of the page&rsquo;s HTML &middot; 180 KB &middot; scripts removed, links do nothing &middot; 2 fields left blank (password and private fields).</p>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-part" aria-labelledby="ct-part" hidden>
+          <dl>
+            <dt>Readable anchor</dt><dd>button &ldquo;Expiring&rdquo;</dd>
+            <dt>Selector</dt><dd><code>main [data-filter="expiring"]</code></dd>
+            <dt>Role and name</dt><dd>button, &ldquo;Expiring&rdquo;, pressed</dd>
+            <dt>Box</dt><dd>x 104, y 116, 92 &times; 28 on the screenshot</dd>
+            <dt>Text</dt><dd>Expiring</dd>
+            <dt>Styles</dt><dd>display inline-flex &middot; #1c2735 on #ecf4ff &middot; 13 px &middot; z-index auto</dd>
+            <dt>Inside</dt><dd><code>main &rsaquo; section.filters &rsaquo; div.chips</code></dd>
+          </dl>
+          <h3 style="margin-top:12px">HTML of the part</h3>
+          <pre><code>&lt;button type="button" class="chip on" data-filter="expiring" aria-pressed="true" wire:click="setFilter('expiring')"&gt;Expiring&lt;/button&gt;</code></pre>
+          <div class="cap-actions"><button type="button" id="copyhtml">Copy</button></div>
+        </div>
+        <div class="cap-p" role="tabpanel" id="cp-det" aria-labelledby="ct-det" hidden>
+          <dl>
+            <dt>Page</dt><dd><code>/register?filter=expiring</code></dd>
+            <dt>Route</dt><dd><code>register.index</code> &middot; &ldquo;Officials register&rdquo;</dd>
+            <dt>Build</dt><dd><code>4b91e2d</code></dd>
+            <dt>Screen</dt><dd>390 &times; 844 at 3&times;, scrolled 0 px</dd>
+            <dt>Browser</dt><dd>Chrome 131 on Android 15</dd>
+            <dt>Screenshot</dt><dd>Drawn by the browser &middot; 212 KB</dd>
+            <dt>Page copy</dt><dd>180 KB (41 KB gzipped) &middot; 2 fields left blank</dd>
+            <dt>Captured</dt><dd>2 Nov 2026 at 12:04:31 UTC</dd>
+          </dl>
+        </div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- Decisions -->
+<section id="v-decisions" hidden>
+  <div class="crumbs">Race Officials</div>
+  <h1>Decisions</h1>
+  <p class="sub">Questions raised for you. Answering records your choice; what happens next is up to whoever asked.</p>
+  <article class="card">
+    <div class="row"><span class="kind">Decision 3 · internal</span><span class="tag t-open">Waiting for you</span><span class="grow"></span><span class="meta">raised via Claude Code · linked to Report 44</span></div>
+    <h2 style="margin-top:8px">Should the register export include nationality for every role?</h2>
+    <p class="meta">Ben asked for nationality in the export. Viewers can already see it on screen.</p>
+    <fieldset class="stack" style="border:0;padding:0;margin:12px 0">
+      <legend class="sr">Options</legend>
+      <label class="opt rec"><input type="radio" name="d3" checked><span><b>A. Yes, for everyone who can export</b> <span class="tag t-client">Recommended</span><br><span class="meta">Consequence: matches what is on screen; no new permission. One small change.</span></span></label>
+      <label class="opt"><input type="radio" name="d3"><span><b>B. Only for staff with the "export personal data" permission</b><br><span class="meta">Consequence: needs a new permission row and a test, plus a reply to Ben explaining why.</span></span></label>
+      <label class="opt"><input type="radio" name="d3"><span><b>C. No</b><br><span class="meta">Consequence: Ben keeps filtering by hand.</span></span></label>
+    </fieldset>
+    <div class="field"><label for="dn">Note (optional)</label><input id="dn" type="text"></div>
+    <div class="row" style="justify-content:flex-end"><button class="btn primary" type="button" id="answer">Record answer</button></div>
+  </article>
+</section>
+
+<!-- Settings -->
+<section id="v-settings" hidden>
+  <div class="crumbs">Race Officials</div>
+  <h1>Site settings</h1>
+  <p class="sub">Owners only.</p>
+  <div id="autobanner" class="banner warn" hidden><span class="ico">!</span><div><b>Auto-approve is on for Race Officials.</b>Agent replies go straight to the site's users. They are still signed with your name. <a href="#" id="turnoff">Turn it off</a></div></div>
+  <div class="card">
+    <h2>Replies from agents</h2>
+    <div class="set">
+      <div><b>Auto-approve agent replies</b><br><span class="meta" id="autodesc">Off: every reply an agent writes for a user is kept as a draft until a person approves it.</span></div>
+      <div class="switch"><input type="checkbox" id="auto" role="switch" aria-label="Auto-approve agent replies"><span></span></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Install</h2>
+    <div class="set"><div><b>Allowed origins</b><br><span class="meta"><code>https://officials-staging.example.org</code></span></div><button class="btn" type="button">Edit</button></div>
+    <div class="set"><div><b>Site keys</b><br><span class="meta">Key <code>k-2026-11</code> · active · last used 3 min ago</span></div><button class="btn" type="button">Add key</button></div>
+    <div class="set"><div><b>Snapshots</b><br><span class="meta">Deleted 90 days after a report is resolved · Privacy mode off</span></div><button class="btn" type="button">Change</button></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Members</h2>
+    <div class="set"><div><b>Sam Okafor</b><br><span class="meta">Owner</span></div><span></span></div>
+    <div class="set"><div><b>Jo Fixture</b><br><span class="meta">Member</span></div><button class="btn" type="button">Change</button></div>
+    <div class="set"><div><b>Invite someone</b><br><span class="meta">Makes a one-time link, valid for 72 hours, for you to send yourself.</span></div><button class="btn" type="button">Make link</button></div>
+  </div>
+</section>
+
+<!-- Agents -->
+<section id="v-agents" hidden>
+  <h1>Agents and tokens</h1>
+  <p class="sub">Everything that can act as you. Revoking takes effect within 15 minutes, or at once for personal tokens.</p>
+  <h2>Connected agents</h2>
+  <div class="list">
+    <div class="li"><span class="n">MCP</span><span class="body"><span class="t">Claude Code on WORKSTATION-7</span><br><span class="meta">Race Officials · notes, drafts, statuses, decisions, snapshots · last used 3 min ago</span></span><span class="st"><button class="btn danger" type="button">Revoke</button></span></div>
+  </div>
+  <h2 style="margin-top:20px">Personal access tokens</h2>
+  <p class="meta">For agents that can't open a browser. Shown once when you make one.</p>
+  <div class="list">
+    <div class="li"><span class="n">PAT</span><span class="body"><span class="t">nightly-triage</span><br><span class="meta">Harbour Booking · read, notes · expires 5 Feb 2027 · last used yesterday</span></span><span class="st"><button class="btn danger" type="button">Revoke</button></span></div>
+  </div>
+  <div class="row" style="margin-top:12px"><button class="btn primary" type="button">Make a token</button></div>
+</section>
+
+    </main>
+    <nav class="bottomtabs" aria-label="Board (phone)">
+      <a href="#" data-go="attention" aria-current="page">Attention</a>
+      <a href="#" data-go="reports">Reports</a>
+      <a href="#" data-go="decisions">Decisions</a>
+      <a href="#" data-go="settings">Settings</a>
+    </nav>
+  </div>
+</div>
+
+<dialog id="dlg-auto" aria-labelledby="dlg-auto-h">
+  <div class="dh"><h2 id="dlg-auto-h">Turn on auto-approve for Race Officials?</h2></div>
+  <div class="db">
+    <p>Replies that agents write for this site's users will be sent <b>straight away, without anyone checking them</b>. They are signed with the name of whoever connected the agent.</p>
+    <p class="meta">Internal notes, statuses and decisions are unaffected. The 2 drafts already waiting stay as drafts.</p>
+  </div>
+  <div class="df"><button class="btn" value="cancel" id="auto-cancel" type="button">Keep it off</button><button class="btn danger" id="auto-ok" type="button">Turn on auto-approve</button></div>
+</dialog>
+
+<dialog id="dlg-reject" aria-labelledby="dlg-rej-h">
+  <div class="dh"><h2 id="dlg-rej-h">Reject this draft?</h2></div>
+  <div class="db"><p>The user never sees it. It stays in the thread as a rejected internal note, so the agent can see why.</p>
+    <div class="field"><label for="why">Why (the agent will read this)</label><input id="why" type="text" placeholder="e.g. Don't promise a date"></div></div>
+  <div class="df"><button class="btn" id="rej-cancel" type="button">Cancel</button><button class="btn danger" id="rej-ok" type="button">Reject draft</button></div>
+</dialog>
+
+<dialog id="dlg-full" class="full" aria-labelledby="dlg-full-h">
+  <div class="dh row"><h2 id="dlg-full-h" class="grow" style="margin:0">Report 41 &middot; page when reported</h2><button class="btn" type="button" id="full-close">Close</button></div>
+  <div class="db" id="full-body"></div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  const views=["signin","consent","attention","attention-empty","reports","thread","decisions","settings","agents"];
+  const titles={attention:"Attention","attention-empty":"Attention",reports:"Reports",thread:"Report 41",decisions:"Decisions",settings:"Settings",agents:"Agents"};
+  const shell=document.getElementById('shell'), pick=document.getElementById('pick'), side=document.getElementById('side');
+  let auto=false, pending=3;
+  function toast(t){const e=document.getElementById('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',2600)}
+  function setAuto(on){auto=on;document.getElementById('auto').checked=on;document.getElementById('autobanner').hidden=!on;
+    document.getElementById('autodesc').textContent=on?"On: agent replies to users are sent straight away, signed with the connecting person's name.":"Off: every reply an agent writes for a user is kept as a draft until a person approves it.";}
+  function show(v){
+    let capTab=null; if(v==='thread-copy'||v==='thread-part'){capTab=v.slice(7); v='thread'} else if(v==='thread'){capTab='shot'}
+    if(capTab){const d=document.getElementById('capd'); d.open=capTab!=='shot'||!matchMedia('(max-width:860px)').matches; selTab(capTab)}
+    if(v==='settings-on'){setAuto(true);v='settings'} else if(v==='settings'&&pick.value==='settings'){setAuto(false)}
+    views.forEach(x=>{const el=document.getElementById('v-'+x); if(el) el.hidden=(x!==v)});
+    const isAuth=(v==='signin'||v==='consent'); shell.hidden=isAuth;
+    document.getElementById('tb-title').textContent=titles[v]||'';
+    const base=v.replace('-empty','');
+    document.querySelectorAll('.nav [data-go], .bottomtabs [data-go]').forEach(a=>{
+      if(a.dataset.go===base) a.setAttribute('aria-current','page'); else a.removeAttribute('aria-current');
+    });
+    side.classList.remove('open'); window.scrollTo(0,0);
+  }
+  pick.addEventListener('change',()=>show(pick.value));
+  document.addEventListener('click',e=>{
+    const go=e.target.closest('[data-go]'); if(go){e.preventDefault(); const v=go.dataset.go; const opt=[...pick.options].find(o=>o.value===v); if(opt) pick.value=v; show(v); return;}
+    const ap=e.target.closest('[data-approve]'); if(ap){
+      const card=ap.closest('[data-q]');
+      if(card){card.remove(); pending--; document.getElementById('cnt-att').textContent=pending+2; toast('Sent to the user, signed as Sam Okafor'); if(!document.querySelector('#queue [data-q]')){pick.value='attention-empty';show('attention-empty')}}
+      else {const d=document.getElementById('draftmsg'); d.classList.remove('drafted'); d.querySelector('.tag').className='tag t-client'; d.querySelector('.tag').textContent='Sent to user'; d.querySelector('.row').remove(); toast('Sent to Ada Example')}
+      return;}
+    const rj=e.target.closest('[data-reject]'); if(rj){window._rej=rj; document.getElementById('dlg-reject').showModal(); return;}
+  });
+  document.getElementById('rej-cancel').onclick=()=>document.getElementById('dlg-reject').close();
+  document.getElementById('rej-ok').onclick=()=>{document.getElementById('dlg-reject').close(); const c=window._rej&&window._rej.closest('[data-q]'); if(c){c.remove(); pending--;} toast('Draft rejected. The agent will see your reason.')};
+  document.getElementById('editdraft').onclick=()=>{const t=document.getElementById('drafttext'); t.contentEditable=t.isContentEditable?'false':'true'; t.focus(); toast(t.isContentEditable?'Editing. Approve sends your edited version.':'Edits kept.')};
+  const sw=document.getElementById('auto');
+  sw.addEventListener('click',e=>{ if(!auto){e.preventDefault(); document.getElementById('dlg-auto').showModal()} else {setAuto(false); toast('Auto-approve is off. Agent replies wait for approval again.')} });
+  document.getElementById('auto-cancel').onclick=()=>document.getElementById('dlg-auto').close();
+  document.getElementById('auto-ok').onclick=()=>{document.getElementById('dlg-auto').close(); setAuto(true); toast('Auto-approve is on for Race Officials')};
+  document.getElementById('turnoff').onclick=e=>{e.preventDefault(); setAuto(false)};
+  document.getElementById('answer').onclick=()=>toast('Answer recorded: A. The agent will see it.');
+  document.getElementById('menu').onclick=()=>{side.classList.toggle('open'); document.getElementById('menu').setAttribute('aria-expanded',side.classList.contains('open'))};
+  document.getElementById('theme').onclick=()=>{const r=document.documentElement; const dark=r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches); r.dataset.theme=dark?'light':'dark'};
+  // ---- capture panel (capture-design.md section 5): a synthetic screenshot (SVG) and a sandboxed page copy
+  const ROWS=[['Ada Example','IJ · ends 30 Nov'],['Fin Sample','IU · ended 14 Oct'],['Gus Fixture','NRO · ended 2 Oct'],['Hana Mock','IJ · ends 12 Jan']];
+  function shot(marked,crop){
+    const W=390,H=380,chips=['All','Current','Expiring','Lapsed']; let cx=16,cs='',t;
+    chips.forEach(c=>{const w=c.length*8+26,on=c==='Expiring';cs+=`<rect x="${cx}" y="116" width="${w}" height="28" rx="14" fill="${on?'#ecf4ff':'#fff'}" stroke="${on?'#0d2c6c':'#c5ccd6'}"/><text x="${cx+13}" y="135" font-size="13" font-weight="${on?600:400}" fill="#1c2735">${c}</text>`;if(on)t={x:cx,y:116,w:w,h:28};cx+=w+8});
+    let ry=160,rs='';ROWS.forEach(r=>{rs+=`<rect x="16" y="${ry}" width="358" height="44" fill="#fff" stroke="#d9e8fb"/><text x="30" y="${ry+27}" font-size="14" fill="#1c2735">${r[0]}</text><text x="360" y="${ry+27}" font-size="14" fill="#354150" text-anchor="end">${r[1]}</text>`;ry+=44});
+    const mk=marked?`<rect x="${t.x-4}" y="${t.y-4}" width="${t.w+8}" height="${t.h+8}" rx="16" fill="none" stroke="#b42318" stroke-width="3"/><circle cx="${t.x+t.w+4}" cy="${t.y-4}" r="12" fill="#b42318"/><text x="${t.x+t.w+4}" y="${t.y}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">41</text>`:'';
+    const vb=crop?`${t.x-48} ${t.y-48} ${t.w+96} ${t.h+96}`:`0 0 ${W} ${H}`;
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" font-family="Segoe UI, Arial, sans-serif"><rect width="${W}" height="${H}" fill="#f7faff"/><rect width="${W}" height="56" fill="#0b3d63"/><text x="16" y="34" font-size="15" font-weight="600" fill="#fff">Race Officials</text><text x="16" y="98" font-size="24" font-weight="600" fill="#1c2735">Officials register</text>${cs}${rs}${mk}</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  }
+  const COPY=`<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>body{margin:0;font:14px/20px system-ui,Segoe UI,Arial,sans-serif;background:#f7faff;color:#1c2735}header{height:56px;background:#0b3d63;color:#fff;display:flex;align-items:center;padding:0 16px;font-weight:600}main{padding:16px}h1{font-size:24px;margin:0 0 12px}.chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.chip{border:1px solid #c5ccd6;border-radius:14px;padding:4px 12px;background:#fff}.chip[aria-pressed=true]{background:#ecf4ff;border-color:#0d2c6c;font-weight:600}.rows{background:#fff;border:1px solid #d9e8fb;border-radius:8px}.r{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #d9e8fb;gap:12px}[data-annotatie-target]{outline:3px solid #b42318;outline-offset:2px}input{min-height:36px;width:100%;box-sizing:border-box;background:repeating-linear-gradient(45deg,#eee 0 6px,#fff 6px 12px)}</style></head><body><header>Race Officials</header><main><h1>Officials register</h1><p><input type="text" value="" aria-label="Search (left blank)"></p><div class="chips"><span class="chip">All</span><span class="chip">Current</span><span class="chip" aria-pressed="true" data-annotatie-target>Expiring</span><span class="chip">Lapsed</span></div><div class="rows">${ROWS.map(r=>`<div class="r"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div></main></body></html>`;
+  document.querySelectorAll('[data-thumb]').forEach(i=>i.src=shot(true,true));
+  const shotImg=document.getElementById('shot'); shotImg.src=shot(true,false);
+  document.getElementById('copyframe').srcdoc=COPY;
+  const tg=document.getElementById('outline-tg');
+  tg.onclick=()=>{const hide=tg.getAttribute('aria-pressed')!=='true'; tg.setAttribute('aria-pressed',String(hide)); tg.textContent=hide?'Show the outline':'Hide the outline'; shotImg.src=shot(!hide,false)};
+  const tabs=['shot','copy','part','det'];
+  function selTab(k){tabs.forEach(x=>{const b=document.getElementById('ct-'+x),p=document.getElementById('cp-'+x),on=x===k; b.setAttribute('aria-selected',String(on)); b.tabIndex=on?0:-1; p.hidden=!on})}
+  const tl=document.querySelector('#capd [role=tablist]');
+  tl.addEventListener('click',e=>{const b=e.target.closest('[role=tab]'); if(b) selTab(b.id.slice(3))});
+  tl.addEventListener('keydown',e=>{if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return; e.preventDefault(); const cur=tabs.findIndex(x=>document.getElementById('ct-'+x).getAttribute('aria-selected')==='true'); const n=tabs[(cur+(e.key==='ArrowRight'?1:tabs.length-1))%tabs.length]; selTab(n); document.getElementById('ct-'+n).focus()});
+  document.querySelectorAll('[data-full]').forEach(b=>b.onclick=()=>{const body=document.getElementById('full-body');
+    body.innerHTML=b.dataset.full==='shot'?'<img alt="" style="display:block;width:min(390px,100%);height:auto;margin:0 auto;border:1px solid var(--border)">':'<iframe sandbox="" title="Copy of the page /register, full size" style="width:min(390px,100%);height:70vh;border:1px solid var(--border);display:block;margin:0 auto;background:#fff"></iframe>';
+    const im=body.querySelector('img'); if(im){im.src=shotImg.src; im.alt=shotImg.alt}
+    const f=body.querySelector('iframe'); if(f) f.srcdoc=COPY;
+    document.getElementById('dlg-full').showModal()});
+  document.getElementById('full-close').onclick=()=>document.getElementById('dlg-full').close();
+  document.getElementById('copyhtml').onclick=()=>toast('HTML of the part copied');
+  document.querySelectorAll('[data-noop]').forEach(a=>a.onclick=e=>{e.preventDefault(); toast('Prototype: not wired')});
+  show(pick.value);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report capture – RW-1a</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&amp;family=Jost:wght@400..700&amp;display=swap">
+<!-- RW-1a: amendment to the approved RW-1 (capture-design.md §4). Concept design, review owed.
+     Draws only what the capture adds to the widget: the preview in the comment panel, the viewer, leaving the
+     capture out, the failure notes, and "Sent with this report" in the thread. Everything else is RW-1 as
+     approved. Synthetic data only; the "screenshot" is drawn as SVG and the page copy is a sandboxed srcdoc. -->
+<style>
+:root {
+  color-scheme: light;
+  --color-accent: #0d2c6c; --color-accent-foreground: #fff; --color-accent-hover: #25417b;
+  --zinc-50: #f7faff; --zinc-100: #ecf4ff; --zinc-200: #d9e8fb; --zinc-300: #c7d6e8; --zinc-500: #677485; --zinc-600: #495565; --zinc-700: #354150; --zinc-800: #1c2735; --zinc-900: #0f1926;
+  --border-control: #808d9f; --border-divider: var(--zinc-200);
+  --warning-text: #855903; --warning-bg: #fff5e8; --warning-subtle: #ffddb0; --warning-icon: #ab7408;
+  --success-text: #06773c; --success-bg: #e4ffea; --success-subtle: #9cfdb7;
+  --info-text: #0a6d8c; --info-bg: #edf9ff; --info-subtle: #beebfe;
+  --danger-solid: #ba0e17;
+  --surface-page: #fff; --surface-sunken: var(--zinc-50); --surface-hover: var(--zinc-100);
+  --text-primary: var(--zinc-800); --text-muted: var(--zinc-500); --text-muted-strong: var(--zinc-600);
+  --focus-ring: #0d2c6c; --backdrop: rgb(0 0 0 / .35);
+  --font-sans: Inter, ui-sans-serif, system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-heading: Jost, Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+  --radius-md: 6px; --radius-lg: 8px; --radius-xl: 12px; --radius-full: 9999px;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / .05); --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / .1), 0 4px 6px -4px rgb(0 0 0 / .1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: #e9edf2; color: var(--text-primary); font: 14px/20px var(--font-sans); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, ul, dl, dd, figure { margin: 0; }
+button, input, select, textarea { font: inherit; color: inherit; }
+a { color: var(--color-accent); text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* review chrome (not part of the design) */
+.rv { background: #fff; border-bottom: 1px solid var(--zinc-300); padding: 8px 16px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; font-size: 13px; }
+.rv b { font-weight: 600; }
+.rv select { min-height: 32px; border: 1px solid var(--border-control); border-radius: var(--radius-md); padding: 4px 8px; max-width: 100%; }
+.rv .muted { color: var(--text-muted-strong); flex: 1 1 18rem; }
+.stage { padding: 16px; display: flex; justify-content: center; }
+.vp { position: relative; background: var(--surface-sunken); border: 1px solid var(--zinc-300); overflow: hidden; width: 1280px; max-width: 100%; height: 760px; }
+.vp.phone { width: 390px; height: 780px; }
+
+/* the host page (abridged S-101 + register) */
+.host-bar { height: 56px; background: #0b3d63; color: #fff; display: flex; align-items: center; padding: 0 16px; gap: 12px; font-weight: 600; }
+.host-bar .sp { flex: 1; }
+.host-bar .rbtn { border: 1px solid rgb(255 255 255 / .5); border-radius: var(--radius-full); padding: 6px 12px; background: transparent; color: #fff; font-weight: 600; }
+.mode { background: #fff5d6; border-bottom: 1px solid #e8c66b; padding: 8px 16px; font-size: 13px; }
+.host { padding: 20px 24px; }
+.host h1 { font: 600 24px/32px var(--font-heading); margin-bottom: 12px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.chip { border: 1px solid #c5ccd6; border-radius: 14px; padding: 4px 12px; background: #fff; }
+.chip.on { background: var(--zinc-100); border-color: var(--color-accent); font-weight: 600; }
+.chip.sel { outline: 3px solid var(--danger-solid); outline-offset: 2px; }
+.rows { background: #fff; border: 1px solid var(--zinc-200); border-radius: var(--radius-lg); }
+.rows div { display: flex; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--zinc-200); gap: 12px; }
+.rows div:last-child { border-bottom: 0; }
+.phone .host { padding: 16px; }
+
+/* widget components (from RW-1) */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 16px; border: 1px solid transparent; border-radius: var(--radius-lg); font-weight: 500; cursor: pointer; background: transparent; text-decoration: none; }
+.btn--primary { background: var(--color-accent); color: #fff; }
+.btn--outline { background: #fff; border-color: var(--border-control); box-shadow: var(--shadow-xs); }
+.btn--ghost:hover, .btn--outline:hover { background: var(--surface-hover); }
+.btn--icon { width: 40px; padding: 0; }
+.btn--sm { min-height: 32px; padding: 5px 12px; }
+.link { background: none; border: 0; padding: 0; color: var(--color-accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; min-height: 24px; }
+.callout { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 2px 12px; padding: 12px 16px; border: 1px solid; border-radius: var(--radius-xl); }
+.callout .c-h { font-weight: 600; }
+.callout--warning { background: var(--warning-bg); border-color: var(--warning-subtle); color: var(--warning-text); }
+.callout--success { background: var(--success-bg); border-color: var(--success-subtle); color: var(--success-text); }
+.callout--info { background: var(--info-bg); border-color: var(--info-subtle); color: var(--info-text); }
+.callout .ico { width: 20px; height: 20px; grid-row: span 3; border-radius: 50%; background: currentColor; opacity: .85; }
+.tag { display: inline-flex; align-items: center; min-height: 24px; padding: 3px 12px; border-radius: var(--radius-full); font-size: 13px; font-weight: 500; background: #f0e8fb; color: #5b2f9a; }
+
+.pop { position: absolute; width: min(26rem, calc(100% - 32px)); max-height: calc(100% - 32px); display: flex; flex-direction: column; background: #fff; border: 1px solid var(--border-divider); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); z-index: 20; }
+.pop.at-part { top: 190px; left: 140px; max-height: calc(100% - 206px); }
+.pop.at-end { top: 72px; right: 16px; }
+.phone .pop { left: 0; right: 0; bottom: 0; top: auto; width: 100%; max-height: 88%; border-radius: var(--radius-xl) var(--radius-xl) 0 0; }
+.pop-hd { display: flex; align-items: flex-start; gap: 12px; padding: 16px 8px 12px 16px; border-bottom: 1px solid var(--border-divider); }
+.pop-hd .ht { flex: 1; min-width: 0; }
+.pop-hd h2 { font: 600 18px/26px var(--font-heading); }
+.about { color: var(--text-muted-strong); font-size: 13px; overflow-wrap: anywhere; }
+.pop-bd { padding: 16px; overflow: auto; display: flex; flex-direction: column; gap: 14px; }
+.pop-ft { padding: 12px 16px 16px; border-top: 1px solid var(--border-divider); display: flex; gap: 8px; flex-wrap: wrap; }
+.phone .pop-ft .btn { flex: 1 1 auto; }
+.lab { font-weight: 600; display: block; }
+.hint { color: var(--text-muted-strong); font-size: 13px; display: block; margin-bottom: 4px; }
+.ta { width: 100%; min-height: 84px; border: 1px solid var(--border-control); border-radius: var(--radius-lg); padding: 8px 10px; resize: vertical; }
+.segc { display: inline-flex; gap: 2px; padding: 2px; background: var(--zinc-100); border-radius: var(--radius-md); }
+.segc label { padding: 6px 12px; border-radius: 4px; cursor: pointer; min-height: 36px; display: inline-flex; align-items: center; }
+.segc label:has(input:checked) { background: #fff; box-shadow: 0 0 0 1px var(--border-control); font-weight: 600; }
+.segc input { position: absolute; opacity: 0; }
+legend { font-weight: 600; padding: 0; margin-bottom: 4px; }
+fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+/* NEW: the capture block (rw-capture) */
+.cap { border: 1px solid var(--border-divider); border-radius: var(--radius-lg); padding: 12px; display: grid; grid-template-columns: 112px minmax(0,1fr); gap: 4px 12px; align-items: start; }
+.cap h3 { font-size: 14px; font-weight: 600; grid-column: 1 / -1; }
+.cap .thumb { grid-row: span 4; width: 112px; height: 72px; border: 1px solid var(--zinc-300); border-radius: var(--radius-md); overflow: hidden; background: #fff; padding: 0; cursor: zoom-in; }
+.cap .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cap .thumb.skel { background: linear-gradient(90deg, var(--zinc-100), #fff, var(--zinc-100)); background-size: 200% 100%; animation: sh 1.2s infinite linear; cursor: default; }
+@keyframes sh { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .cap .thumb.skel { animation: none; } }
+.cap .cap-t { overflow-wrap: anywhere; }
+.cap .cap-m { color: var(--text-muted-strong); font-size: 13px; }
+.cap.off .thumb { opacity: .35; filter: grayscale(1); cursor: default; }
+.chk { display: flex; gap: 10px; align-items: flex-start; }
+.chk input { width: 20px; height: 20px; margin: 0; flex: none; }
+
+/* viewer dialog (rw-capture-viewer) */
+.scrim { position: absolute; inset: 0; background: var(--backdrop); z-index: 30; display: grid; place-items: center; padding: 24px; }
+.viewer { width: min(64rem, 100%); max-height: 100%; background: #fff; border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; overflow: hidden; }
+.phone .scrim { padding: 0; }
+.phone .viewer { height: 100%; border-radius: 0; }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border-divider); padding: 0 16px; }
+.tabs button { border: 0; background: none; padding: 10px 12px; min-height: 44px; border-bottom: 3px solid transparent; cursor: pointer; color: var(--text-muted-strong); font-weight: 600; }
+.tabs button[aria-selected="true"] { color: var(--color-accent); border-color: var(--color-accent); }
+.vbody { padding: 16px; overflow: auto; flex: 1; min-height: 0; background: var(--surface-sunken); }
+.vbody img { max-width: 100%; height: auto; display: block; margin: 0 auto; border: 1px solid var(--zinc-300); background: #fff; }
+.copyframe { display: block; width: 100%; height: 480px; border: 1px solid var(--zinc-300); background: #fff; }
+.phone .copyframe { height: 520px; }
+.vnote { padding: 10px 16px; font-size: 13px; color: var(--text-muted-strong); border-top: 1px solid var(--border-divider); }
+
+/* thread panel (RW-1 state 19, abridged) */
+.thread { position: absolute; top: 56px; right: 0; bottom: 0; width: 26rem; max-width: 100%; background: #fff; border-left: 1px solid var(--border-divider); box-shadow: var(--shadow-lg); display: flex; flex-direction: column; z-index: 20; }
+.phone .thread { width: 100%; top: 0; }
+.msg { border-top: 1px solid var(--border-divider); padding-top: 12px; }
+.msg .who { font-weight: 600; }
+.msg .when { color: var(--text-muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="rv" role="region" aria-label="Review controls">
+  <b>RW-1a · capture (amendment, review owed)</b>
+  <label>Width <select id="w"><option value="1280">1280</option><option value="390">390 (phone)</option></select></label>
+  <label>State <select id="s"></select></label>
+  <span class="muted">Only what the capture adds is drawn; the rest is RW-1 as approved. capture-design.md §4.</span>
+</div>
+<div class="stage"><div class="vp" id="vp"></div></div>
+
+<script>
+(function () {
+  const STATES = [
+    ['capturing', '1 · Taking the screenshot'],
+    ['ready', '2 · Ready: preview in the panel'],
+    ['ready-desktop-real', '3 · Ready, real capture offered (desktop)'],
+    ['real-asked', '4 · Real screen capture asked'],
+    ['leftout', '5 · Leave out ticked'],
+    ['required', '6 · Site requires the capture'],
+    ['shotfailed', '7 · Screenshot could not be taken'],
+    ['view-shot', '8 · See what will be sent: Screenshot'],
+    ['view-copy', '9 · See what will be sent: Page copy'],
+    ['sent-noshot', '10 · Sent without a screenshot'],
+    ['sent-nocopy', '11 · Sent without the page HTML (over 2 MB)'],
+    ['thread', '12 · Thread: Sent with this report'],
+    ['thread-view', '13 · Thread: viewer, screenshot (read-only)'],
+    ['thread-view-copy', '14 · Thread: viewer, page copy (read-only)'],
+    ['thread-leftout', '15 · Thread: sent without a capture']
+  ];
+  const sSel = document.getElementById('s'), wSel = document.getElementById('w'), vp = document.getElementById('vp');
+  STATES.forEach(([v, t]) => sSel.add(new Option(t, v)));
+  sSel.value = 'ready';
+
+  const ROWS = [['Ada Example', 'IJ · ends 30 Nov'], ['Fin Sample', 'IU · ended 14 Oct'], ['Gus Fixture', 'NRO · ended 2 Oct'], ['Hana Mock', 'IJ · ends 12 Jan'], ['Ivo Stand-in', 'IU · ends 3 Feb']];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  // The "screenshot": an SVG drawing of the page as it looked (synthetic). marked = part outlined.
+  function shot(phone, marked, crop) {
+    const W = phone ? 390 : 1280, H = phone ? 700 : 640;
+    let y = 56, rows = '';
+    const pad = phone ? 16 : 24;
+    const chipY = 56 + (phone ? 16 : 20) + 44;
+    const chips = ['All', 'Current', 'Expiring', 'Lapsed'];
+    let cx = pad, chipSvg = '', target;
+    chips.forEach(c => { const w = c.length * 8 + 26; const on = c === 'Expiring';
+      chipSvg += `<rect x="${cx}" y="${chipY}" width="${w}" height="28" rx="14" fill="${on ? '#ecf4ff' : '#fff'}" stroke="${on ? '#0d2c6c' : '#c5ccd6'}"/><text x="${cx + 13}" y="${chipY + 19}" font-size="13" font-weight="${on ? 600 : 400}" fill="#1c2735">${c}</text>`;
+      if (on) target = { x: cx, y: chipY, w, h: 28 }; cx += w + 8; });
+    let ry = chipY + 44;
+    ROWS.forEach(r => { rows += `<rect x="${pad}" y="${ry}" width="${W - 2 * pad}" height="44" fill="#fff" stroke="#d9e8fb"/><text x="${pad + 14}" y="${ry + 27}" font-size="14" fill="#1c2735">${r[0]}</text><text x="${W - pad - 14}" y="${ry + 27}" font-size="14" fill="#354150" text-anchor="end">${r[1]}</text>`; ry += 44; });
+    const mark = marked ? `<rect x="${target.x - 4}" y="${target.y - 4}" width="${target.w + 8}" height="${target.h + 8}" rx="16" fill="none" stroke="#ba0e17" stroke-width="3"/><circle cx="${target.x + target.w + 4}" cy="${target.y - 4}" r="12" fill="#ba0e17"/><text x="${target.x + target.w + 4}" y="${target.y}" font-size="12" font-weight="700" fill="#fff" text-anchor="middle">41</text>` : '';
+    const vb = crop ? `${target.x - 48} ${target.y - 48} ${target.w + 96} ${target.h + 96}` : `0 0 ${W} ${H}`;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${crop ? (target.w + 96) * 2 : W}" font-family="Segoe UI, Arial, sans-serif"><rect width="${W}" height="${H}" fill="#f7faff"/><rect width="${W}" height="56" fill="#0b3d63"/><text x="16" y="34" font-size="15" font-weight="600" fill="#fff">Race Officials</text><text x="${pad}" y="${56 + (phone ? 16 : 20) + 26}" font-size="24" font-weight="600" fill="#1c2735">Officials register</text>${chipSvg}${rows}${mark}</svg>`;
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  }
+  // The page copy: real HTML, rendered sandboxed with no scripts (capture-design.md §8).
+  function pageCopy() {
+    const rows = ROWS.map(r => `<div class="r"><span>${r[0]}</span><span>${r[1]}</span></div>`).join('');
+    return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src 'unsafe-inline'"><style>
+      body{margin:0;font:14px/20px system-ui,Segoe UI,Arial,sans-serif;background:#f7faff;color:#1c2735}
+      header{height:56px;background:#0b3d63;color:#fff;display:flex;align-items:center;padding:0 16px;font-weight:600}
+      main{padding:20px 24px} h1{font-size:24px;margin:0 0 12px}
+      .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px} .chip{border:1px solid #c5ccd6;border-radius:14px;padding:4px 12px;background:#fff}
+      .chip[aria-pressed=true]{background:#ecf4ff;border-color:#0d2c6c;font-weight:600}
+      .rows{background:#fff;border:1px solid #d9e8fb;border-radius:8px} .r{display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #d9e8fb;gap:12px}
+      [data-annotatie-target]{outline:3px solid #ba0e17;outline-offset:2px}
+      input[data-annotatie-masked]{background:repeating-linear-gradient(45deg,#eee 0 6px,#fff 6px 12px)}
+      </style></head><body><header>Race Officials</header><main><h1>Officials register</h1>
+      <p><label>Search <input type="text" value="" data-annotatie-masked aria-label="Search (left blank)"></label></p>
+      <div class="chips"><span class="chip">All</span><span class="chip">Current</span><span class="chip" aria-pressed="true" data-annotatie-target>Expiring</span><span class="chip">Lapsed</span></div>
+      <div class="rows">${rows}</div></main></body></html>`;
+  }
+
+  function host(phone, modeOn) {
+    return `<div class="host-bar">${phone ? '' : '<span>Race Officials</span>'}<span class="sp"></span><button class="rbtn" type="button" aria-pressed="${modeOn}">Report</button></div>
+      ${modeOn ? `<div class="mode">${phone ? 'Report mode: tap any part of the page to report on it.' : 'Report mode: select any part of the page to report on it. Nothing on the page works until you leave.'}</div>` : ''}
+      <div class="host" aria-hidden="true"><h1>Officials register</h1>
+      <div class="chips"><span class="chip">All</span><span class="chip">Current</span><span class="chip on${modeOn ? ' sel' : ''}">Expiring</span><span class="chip">Lapsed</span></div>
+      <div class="rows">${ROWS.map(r => `<div><span>${r[0]}</span><span>${r[1]}</span></div>`).join('')}</div></div>`;
+  }
+
+  function captureBlock(st, phone) {
+    if (st === 'capturing') return `<div class="cap" aria-busy="true"><h3>Sent with your report</h3><span class="thumb skel" aria-hidden="true"></span><p class="cap-t">Taking a screenshot…</p><p class="cap-m">You can write your comment meanwhile.</p></div>`;
+    if (st === 'shotfailed') return `<div class="cap"><h3>Sent with your report</h3><span class="thumb" aria-hidden="true" style="display:grid;place-items:center;color:var(--text-muted);font-size:12px;cursor:default">No picture</span><p class="cap-t">A copy of this page, 180 KB</p><p class="cap-m">The screenshot could not be taken, so only the page copy goes. Password fields are left blank.</p><p><button class="link" type="button" data-act="view-copy">See what will be sent</button></p></div>`;
+    const off = st === 'leftout';
+    const req = st === 'required';
+    const real = st === 'ready-desktop-real' && !phone;
+    return `<div class="cap${off ? ' off' : ''}"><h3>Sent with your report</h3>
+      <button class="thumb" type="button" data-act="view-shot" aria-label="See the screenshot full size"${off ? ' disabled' : ''}><img alt="" src="${shot(phone, true, true)}"></button>
+      <p class="cap-t">${off ? 'Nothing from the page: only your comment, the address, the screen size and the part you chose.' : 'A screenshot and a copy of this page, 340 KB'}</p>
+      ${off ? '' : `<p class="cap-m">${req ? 'This site includes a screenshot and a copy of the page with every report. ' : ''}Password fields and the fields this site marks as private are left blank.</p>
+      <p><button class="link" type="button" data-act="view-shot">See what will be sent</button></p>`}
+      ${real ? `<p class="cap-m">Something missing from the picture, such as a video or a map? <button class="link" type="button" data-act="real">Use a real screen capture instead</button></p>` : ''}
+    </div>
+    ${req ? '' : `<label class="chk"><input type="checkbox" data-act="leave"${off ? ' checked' : ''}><span>Leave out the screenshot and page copy</span></label>`}`;
+  }
+
+  function compose(st, phone) {
+    const realNote = st === 'real-asked' ? `<div class="callout callout--info" role="status"><span class="ico" aria-hidden="true"></span><p class="c-h">Your browser will ask what to share</p><p>Choose “This tab”. Only one picture is taken, then sharing stops.</p></div>` : '';
+    return `<div class="pop ${phone ? '' : 'at-part'}" role="dialog" aria-modal="true" aria-labelledby="ph">
+      <div class="pop-hd"><div class="ht"><h2 id="ph" tabindex="-1">New report</h2><p class="about">About: button “Expiring”</p></div><button class="btn btn--ghost btn--icon" type="button" aria-label="Close">✕</button></div>
+      <div class="pop-bd">${realNote}
+        <fieldset><legend>Type</legend><div class="segc"><label><input type="radio" name="t" checked>Bug</label><label><input type="radio" name="t">Feature</label><label><input type="radio" name="t">Question</label></div></fieldset>
+        <div><label class="lab" for="ta">Comment</label><span class="hint">Say what you expected and what you saw.</span><textarea class="ta" id="ta">Expiring also lists two people who lapsed last month.</textarea></div>
+        ${captureBlock(st === 'real-asked' ? 'ready-desktop-real' : st, phone)}
+      </div>
+      <div class="pop-ft"><button class="btn btn--primary" type="button">Send report</button><button class="btn btn--outline" type="button">Cancel</button></div></div>`;
+  }
+
+  function viewer(tab, phone, readOnly) {
+    const title = readOnly ? 'Sent with Report 41' : 'What will be sent';
+    const body = tab === 'shot'
+      ? `<figure><img src="${shot(phone, true, false)}" alt="Screenshot of Officials register as Ada Example saw it, with the Expiring filter outlined as the part reported."></figure>`
+      : `<iframe class="copyframe" sandbox="" title="Copy of the page, Officials register" srcdoc="${esc(pageCopy())}"></iframe>`;
+    const note = tab === 'shot'
+      ? 'Screenshot · 390 × 844 at 3× · drawn by the browser: videos, maps and pictures from other sites may be missing.'
+      : 'Copy of the page’s HTML · 180 KB · links and buttons in it do nothing. Password fields and private fields are left blank.';
+    return `<div class="scrim"><div class="viewer" role="dialog" aria-modal="true" aria-labelledby="vh">
+      <div class="pop-hd"><div class="ht"><h2 id="vh" tabindex="-1">${title}</h2><p class="about">Officials register · 2 Nov 2026 at 12:04 UTC</p></div><button class="btn btn--ghost btn--icon" type="button" aria-label="Close" data-act="${readOnly ? 'to-thread' : 'to-ready'}">✕</button></div>
+      <div class="tabs" role="tablist" aria-label="View">
+        <button role="tab" id="tb-shot" aria-selected="${tab === 'shot'}" aria-controls="tp" tabindex="${tab === 'shot' ? 0 : -1}" data-act="${readOnly ? 'thread-view' : 'view-shot'}">Screenshot</button>
+        <button role="tab" id="tb-copy" aria-selected="${tab === 'copy'}" aria-controls="tp" tabindex="${tab === 'copy' ? 0 : -1}" data-act="${readOnly ? 'thread-view-copy' : 'view-copy'}">Page copy</button></div>
+      <div class="vbody" role="tabpanel" id="tp" aria-labelledby="tb-${tab}">${body}</div>
+      <p class="vnote">${note}</p></div></div>`;
+  }
+
+  function sent(kind, phone) {
+    const t = kind === 'noshot'
+      ? ['Report 46 sent, without a screenshot', 'The screenshot was not ready in time, so it was left out. The page copy, your comment, the address, the screen size and the part you chose were sent.']
+      : ['Report 46 sent, without a copy of the page’s HTML', 'The page was larger than 2 MB, so its HTML was left out. The screenshot, your comment, the address, the screen size and the part you chose were sent.'];
+    return `<div class="pop ${phone ? '' : 'at-part'}" role="dialog" aria-modal="true" aria-labelledby="ph"><div class="pop-hd"><div class="ht"><h2 id="ph" tabindex="-1">New report</h2><p class="about">About: button “Expiring”</p></div></div>
+      <div class="pop-bd"><div class="callout callout--warning" role="status"><span class="ico" aria-hidden="true"></span><p class="c-h">${t[0]}</p><p>${t[1]}</p></div></div>
+      <div class="pop-ft"><button class="btn btn--primary" type="button">Close</button><button class="btn btn--outline" type="button">Open the thread</button></div></div>`;
+  }
+
+  function thread(phone, leftOut) {
+    const cap = leftOut
+      ? `<p class="cap-m" style="color:var(--text-muted-strong)">Sent without a screenshot or page copy: Ada Example left them out.</p>`
+      : `<div class="cap"><h3>Sent with this report</h3><button class="thumb" type="button" data-act="thread-view" aria-label="View the screenshot and page copy sent with Report 41"><img alt="" src="${shot(phone, true, true)}"></button><p class="cap-t">A screenshot and a copy of the page, taken when the report was sent</p><p><button class="link" type="button" data-act="thread-view">View</button></p></div>`;
+    return `<aside class="thread" role="dialog" aria-modal="true" aria-labelledby="th">
+      <div class="pop-hd"><div class="ht"><h2 id="th" tabindex="-1">Report 41</h2><p class="about">Bug · Officials register · sent by Ada Example</p></div><button class="btn btn--ghost btn--icon" type="button" aria-label="Close">✕</button></div>
+      <div class="pop-bd"><p><span class="tag">Answered</span> Answered: a reply is waiting for you.</p>
+        <p>About: button “Expiring”. <button class="link" type="button">Show on the page</button></p>
+        ${cap}
+        <h3 style="font-size:15px">Messages</h3>
+        <div class="msg"><p><span class="who">Ada Example</span> <span class="when">2 Nov 2026 at 12:04 UTC</span></p><p>Expiring also lists two people who lapsed last month.</p></div>
+        <div class="msg"><p><span class="who">Sam Okafor</span> <span class="when">2 Nov 2026 at 12:31 UTC</span></p><p>Thanks, Ada. You’re right: the filter counted from the start of the month. That’s fixed on staging now.</p></div>
+      </div></aside>`;
+  }
+
+  function render() {
+    const st = sSel.value, phone = wSel.value === '390';
+    vp.className = 'vp' + (phone ? ' phone' : '');
+    const inThread = st.startsWith('thread');
+    let html = host(phone, !inThread);
+    if (st === 'view-shot' || st === 'view-copy') html += compose('ready', phone) + viewer(st === 'view-shot' ? 'shot' : 'copy', phone, false);
+    else if (st === 'sent-noshot') html += sent('noshot', phone);
+    else if (st === 'sent-nocopy') html += sent('nocopy', phone);
+    else if (st === 'thread') html += thread(phone, false);
+    else if (st === 'thread-leftout') html += thread(phone, true);
+    else if (st === 'thread-view' || st === 'thread-view-copy') html += thread(phone, false) + viewer(st === 'thread-view' ? 'shot' : 'copy', phone, true);
+    else html += compose(st, phone);
+    vp.innerHTML = html;
+    const h = vp.querySelector('.viewer h2, .pop h2, .thread h2');
+    if (h && document.activeElement !== sSel && document.activeElement !== wSel) h.focus();
+  }
+  function go(v) { if (![...sSel.options].some(o => o.value === v)) sSel.add(new Option(v, v)); sSel.value = v; render(); }
+
+  vp.addEventListener('click', e => {
+    const a = e.target.closest('[data-act]'); if (!a) return;
+    const act = a.dataset.act;
+    if (act === 'leave') return go(a.checked ? 'leftout' : 'ready');
+    if (act === 'to-ready') return go('ready');
+    if (act === 'to-thread') return go('thread');
+    if (act === 'real') return go('real-asked');
+    go(act);
+  });
+  vp.addEventListener('keydown', e => {
+    const t = e.target.closest('[role=tab]'); if (!t) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const o = t.parentElement.querySelector('[role=tab]:not([aria-selected=true])'); o.click(); setTimeout(() => vp.querySelector('[role=tab][aria-selected=true]').focus()); }
+    if (e.key === 'Escape') { const c = vp.querySelector('.viewer [aria-label=Close]'); if (c) c.click(); }
+  });
+  sSel.addEventListener('change', render); wSel.addEventListener('change', render);
+  render();
+})();
+</script>
+</body>
+</html>
