@@ -1,7 +1,0 @@
-{
-  "name": "@annotatie/cli",
-  "private": true,
-  "type": "module",
-  "bin": { "annotatie": "src/cli.ts" },
-  "dependencies": { "@annotatie/core": "*", "@annotatie/store": "*" }
-}

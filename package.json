@@ -10,8 +10,7 @@
     "packages/*",
     "services/*",
     "apps/*",
-    "tools/*",
-    "cli"
+    "tools/*"
   ],
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
