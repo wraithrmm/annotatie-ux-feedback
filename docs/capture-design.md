@@ -3,7 +3,8 @@
 > **Proposal, review owed.** This adds to `platform-design.md` revision 2 (§6 Snapshot, §8 `get_snapshot`, §9.2)
 > and to RW-1 §5 ("The snapshot"), and replaces them where they differ. It is drawn in
 > `design/prototype/RW-1a-capture.html` (the widget: what the reporter sees) and in `PT-1-portal.html`
-> (the thread's "Page when reported" panel: what the reviewer sees). Open questions are in §11.
+> (the thread's "Page when reported" panel: what the reviewer sees). **C1–C5 answered 6 Nov 2026 (§11):
+> the capture is always sent, the real screen capture is offered on desktop, there is no covering tool.**
 
 ## 1. What is captured with every report
 
@@ -63,9 +64,11 @@ page already shows, which it reads from the browser cache.
   - **Screenshot**;
   - **Page copy**: the copy rendered in a sandboxed frame (§8), so the reporter sees exactly what reviewers
     will see.
-- **"Leave out the screenshot and page copy"**: a checkbox, off by default. When ticked, only the comment,
-  the address, the screen size and the part record go. A site can remove this choice (setting "Every report
-  includes a capture"), as the Race Officials pilot would (D-499 (5)).
+- **The capture is always sent (C1, 6 Nov 2026).** There is no choice to leave it out and no site setting
+  for it. The reporter sees what goes before they press Send, and the panel says so: "A screenshot and a copy
+  of this page are sent with every report." What keeps private data out is the site's masking (below).
+- **No covering tool (C3, 6 Nov 2026).** The reporter has already pointed at the part they mean, so drawing
+  boxes over the screenshot adds nothing.
 - **Masking is applied before the preview**, so the preview is what is sent: password fields blank, fields
   marked `data-annotatie-mask` blank, and with privacy mode on, every form field's text blank. The note
   under the thumbnail says which: "Password fields are left blank." / "Password fields and the fields this
@@ -159,7 +162,7 @@ the part record.
 
 | Risk | Answer |
 |---|---|
-| Personal data in a screenshot | Masking happens in the DOM clone before drawing, so method A's screenshot is masked exactly as the page copy is. Method B paints solid boxes over the masked parts' boxes before upload and is hidden when privacy mode is on. The reporter sees the preview and can leave it out (§4) |
+| Personal data in a screenshot | Masking happens in the DOM clone before drawing, so method A's screenshot is masked exactly as the page copy is. Method B paints solid boxes over the masked parts' boxes before upload and is hidden when privacy mode is on. The reporter sees the preview before sending (§4). Because the capture is always sent (C1), a site that shows sensitive data must mark those fields `data-annotatie-mask` or turn privacy mode on; the SDK install guide says so |
 | Stored XSS through the page copy | Rendered only in `<iframe sandbox srcdoc>` with **no** `allow-scripts` and **no** `allow-same-origin` (an opaque origin, `implementation-plan.md` 2.8), plus a CSP meta `default-src 'none'; img-src data:; style-src 'unsafe-inline'`; sanitised in the browser and again on the server (§7) |
 | The copy calling out to the host or a tracker | Cross-origin images are not loaded (§7); the CSP blocks every other fetch; links in the copy are inert (sandbox without `allow-popups`, `allow-top-navigation`) |
 | One site reading another's captures | S3 keys start with the site id taken from the verified token; presigned GETs (5 minutes) are issued only after the same visibility check as the thread |
@@ -187,7 +190,7 @@ the part record.
 |---|---|
 | P2 API | The capture entity and part record; presigned POST; confirm and re-sanitise; the `pending/` lifecycle rule; retention; the GET links |
 | P3 Portal | The "Page when reported" panel with its four tabs, the full-size dialog, the list thumbnail, and the phone disclosure |
-| P4 Widget | Capture at selection; method A and the optional B; masking; the marked copy and close-up; the preview, viewer and leave-out choice; the thread's "Sent with this report" |
+| P4 Widget | Capture at selection; method A and the optional B; masking; the marked copy and close-up; the preview and viewer; the thread's "Sent with this report" |
 | P5 MCP | `get_screenshot`, `get_page_html`, `capture` on `get_item`, resources |
 
 Tests:
@@ -196,12 +199,12 @@ Tests:
   where the test checks each masked value is absent from all four files and from what the MCP returns;
 - MCP: an agent fetches the close-up and gets an image no larger than 1,568 px.
 
-## 11. Open questions (recommendation first)
+## 11. Questions (all answered 6 Nov 2026)
 
-| # | Question | Recommendation |
+| # | Question | Answer |
 |---|---|---|
-| C1 | May a reporter leave the capture out? | Yes by default; a site setting can make it required (the Race Officials pilot would) |
-| C2 | Offer the real screen capture (method B)? | Yes, desktop only, behind a link, hidden in privacy mode |
-| C3 | Let the reporter cover part of the screenshot before sending (draw boxes)? | Later. Masking by the site plus "leave it out" covers it for now; covering would also have to blank the same parts of the page copy |
-| C4 | Screenshot of the visible part only, or the whole scrolled page? | Visible part only: it is what they saw, and the page copy holds the rest |
-| C5 | Should every client user of the site see each other's captures? | Yes, the same as the messages (`platform-design.md` §2). Revisit if a site has client users who must not see each other's screens |
+| C1 | May a reporter leave the capture out? | **No.** Every report carries its capture; no checkbox and no site setting. Privacy is the site's masking (§8) |
+| C2 | Offer the real screen capture (method B)? | **Yes**, desktop only, behind a link, hidden in privacy mode |
+| C3 | Let the reporter cover part of the screenshot before sending (draw boxes)? | **No.** They have already clicked the part they mean; covering is overkill. Not planned |
+| C4 | Screenshot of the visible part only, or the whole scrolled page? | **Visible part only**, as recommended: it is what they saw, and the page copy holds the rest |
+| C5 | Should every client user of the site see each other's captures? | **Yes**, the same as the messages (`platform-design.md` §2) |

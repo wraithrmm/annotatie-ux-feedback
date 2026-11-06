@@ -6,8 +6,8 @@
 <title>Report capture – RW-1a</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&amp;family=Jost:wght@400..700&amp;display=swap">
 <!-- RW-1a: amendment to the approved RW-1 (capture-design.md §4). Concept design, review owed.
-     Draws only what the capture adds to the widget: the preview in the comment panel, the viewer, leaving the
-     capture out, the failure notes, and "Sent with this report" in the thread. Everything else is RW-1 as
+     Draws only what the capture adds to the widget: the preview in the comment panel, the viewer, the failure
+     notes, and "Sent with this report" in the thread. The capture is always sent (C1, 6 Nov 2026). Everything else is RW-1 as
      approved. Synthetic data only; the "screenshot" is drawn as SVG and the page copy is a sandboxed srcdoc. -->
 <style>
 :root {
@@ -151,17 +151,14 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
     ['ready', '2 · Ready: preview in the panel'],
     ['ready-desktop-real', '3 · Ready, real capture offered (desktop)'],
     ['real-asked', '4 · Real screen capture asked'],
-    ['leftout', '5 · Leave out ticked'],
-    ['required', '6 · Site requires the capture'],
-    ['shotfailed', '7 · Screenshot could not be taken'],
-    ['view-shot', '8 · See what will be sent: Screenshot'],
-    ['view-copy', '9 · See what will be sent: Page copy'],
-    ['sent-noshot', '10 · Sent without a screenshot'],
-    ['sent-nocopy', '11 · Sent without the page HTML (over 2 MB)'],
-    ['thread', '12 · Thread: Sent with this report'],
-    ['thread-view', '13 · Thread: viewer, screenshot (read-only)'],
-    ['thread-view-copy', '14 · Thread: viewer, page copy (read-only)'],
-    ['thread-leftout', '15 · Thread: sent without a capture']
+    ['shotfailed', '5 · Screenshot could not be taken'],
+    ['view-shot', '6 · See what will be sent: Screenshot'],
+    ['view-copy', '7 · See what will be sent: Page copy'],
+    ['sent-noshot', '8 · Sent without a screenshot'],
+    ['sent-nocopy', '9 · Sent without the page HTML (over 2 MB)'],
+    ['thread', '10 · Thread: Sent with this report'],
+    ['thread-view', '11 · Thread: viewer, screenshot (read-only)'],
+    ['thread-view-copy', '12 · Thread: viewer, page copy (read-only)']
   ];
   const sSel = document.getElementById('s'), wSel = document.getElementById('w'), vp = document.getElementById('vp');
   STATES.forEach(([v, t]) => sSel.add(new Option(t, v)));
@@ -217,17 +214,14 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   function captureBlock(st, phone) {
     if (st === 'capturing') return `<div class="cap" aria-busy="true"><h3>Sent with your report</h3><span class="thumb skel" aria-hidden="true"></span><p class="cap-t">Taking a screenshot…</p><p class="cap-m">You can write your comment meanwhile.</p></div>`;
     if (st === 'shotfailed') return `<div class="cap"><h3>Sent with your report</h3><span class="thumb" aria-hidden="true" style="display:grid;place-items:center;color:var(--text-muted);font-size:12px;cursor:default">No picture</span><p class="cap-t">A copy of this page, 180 KB</p><p class="cap-m">The screenshot could not be taken, so only the page copy goes. Password fields are left blank.</p><p><button class="link" type="button" data-act="view-copy">See what will be sent</button></p></div>`;
-    const off = st === 'leftout';
-    const req = st === 'required';
     const real = st === 'ready-desktop-real' && !phone;
-    return `<div class="cap${off ? ' off' : ''}"><h3>Sent with your report</h3>
-      <button class="thumb" type="button" data-act="view-shot" aria-label="See the screenshot full size"${off ? ' disabled' : ''}><img alt="" src="${shot(phone, true, true)}"></button>
-      <p class="cap-t">${off ? 'Nothing from the page: only your comment, the address, the screen size and the part you chose.' : 'A screenshot and a copy of this page, 340 KB'}</p>
-      ${off ? '' : `<p class="cap-m">${req ? 'This site includes a screenshot and a copy of the page with every report. ' : ''}Password fields and the fields this site marks as private are left blank.</p>
-      <p><button class="link" type="button" data-act="view-shot">See what will be sent</button></p>`}
+    return `<div class="cap"><h3>Sent with your report</h3>
+      <button class="thumb" type="button" data-act="view-shot" aria-label="See the screenshot full size"><img alt="" src="${shot(phone, true, true)}"></button>
+      <p class="cap-t">A screenshot and a copy of this page, 340 KB</p>
+      <p class="cap-m">A screenshot and a copy of this page are sent with every report. Password fields and the fields this site marks as private are left blank.</p>
+      <p><button class="link" type="button" data-act="view-shot">See what will be sent</button></p>
       ${real ? `<p class="cap-m">Something missing from the picture, such as a video or a map? <button class="link" type="button" data-act="real">Use a real screen capture instead</button></p>` : ''}
-    </div>
-    ${req ? '' : `<label class="chk"><input type="checkbox" data-act="leave"${off ? ' checked' : ''}><span>Leave out the screenshot and page copy</span></label>`}`;
+    </div>`;
   }
 
   function compose(st, phone) {
@@ -268,10 +262,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
       <div class="pop-ft"><button class="btn btn--primary" type="button">Close</button><button class="btn btn--outline" type="button">Open the thread</button></div></div>`;
   }
 
-  function thread(phone, leftOut) {
-    const cap = leftOut
-      ? `<p class="cap-m" style="color:var(--text-muted-strong)">Sent without a screenshot or page copy: Ada Example left them out.</p>`
-      : `<div class="cap"><h3>Sent with this report</h3><button class="thumb" type="button" data-act="thread-view" aria-label="View the screenshot and page copy sent with Report 41"><img alt="" src="${shot(phone, true, true)}"></button><p class="cap-t">A screenshot and a copy of the page, taken when the report was sent</p><p><button class="link" type="button" data-act="thread-view">View</button></p></div>`;
+  function thread(phone) {
+    const cap = `<div class="cap"><h3>Sent with this report</h3><button class="thumb" type="button" data-act="thread-view" aria-label="View the screenshot and page copy sent with Report 41"><img alt="" src="${shot(phone, true, true)}"></button><p class="cap-t">A screenshot and a copy of the page, taken when the report was sent</p><p><button class="link" type="button" data-act="thread-view">View</button></p></div>`;
     return `<aside class="thread" role="dialog" aria-modal="true" aria-labelledby="th">
       <div class="pop-hd"><div class="ht"><h2 id="th" tabindex="-1">Report 41</h2><p class="about">Bug · Officials register · sent by Ada Example</p></div><button class="btn btn--ghost btn--icon" type="button" aria-label="Close">✕</button></div>
       <div class="pop-bd"><p><span class="tag">Answered</span> Answered: a reply is waiting for you.</p>
@@ -291,9 +283,8 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
     if (st === 'view-shot' || st === 'view-copy') html += compose('ready', phone) + viewer(st === 'view-shot' ? 'shot' : 'copy', phone, false);
     else if (st === 'sent-noshot') html += sent('noshot', phone);
     else if (st === 'sent-nocopy') html += sent('nocopy', phone);
-    else if (st === 'thread') html += thread(phone, false);
-    else if (st === 'thread-leftout') html += thread(phone, true);
-    else if (st === 'thread-view' || st === 'thread-view-copy') html += thread(phone, false) + viewer(st === 'thread-view' ? 'shot' : 'copy', phone, true);
+    else if (st === 'thread') html += thread(phone);
+    else if (st === 'thread-view' || st === 'thread-view-copy') html += thread(phone) + viewer(st === 'thread-view' ? 'shot' : 'copy', phone, true);
     else html += compose(st, phone);
     vp.innerHTML = html;
     const h = vp.querySelector('.viewer h2, .pop h2, .thread h2');
@@ -304,7 +295,6 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
   vp.addEventListener('click', e => {
     const a = e.target.closest('[data-act]'); if (!a) return;
     const act = a.dataset.act;
-    if (act === 'leave') return go(a.checked ? 'leftout' : 'ready');
     if (act === 'to-ready') return go('ready');
     if (act === 'to-thread') return go('thread');
     if (act === 'real') return go('real-asked');

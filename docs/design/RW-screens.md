@@ -287,16 +287,16 @@ Behaviour: `../capture-design.md` §2–§4. Prototype: `prototype/RW-1a-capture
 `RW-1-approved-2026-11-03.html` is unchanged). New component: the capture block (`report-capture`), built from
 the list row's thumbnail and the callout, and its viewer (`report-capture-viewer`), built from the thread panel
 with a tab list. **Changes to approved states:** state 6's note is replaced by the capture block; state 12's
-copy changes (A1-11); state 19's "A copy of the page was sent…" line is replaced by A1-12 / A1-15.
+copy changes (A1-11); state 19's "A copy of the page was sent…" line is replaced by A1-12. **C1/C3 (6 Nov 2026):**
+the capture is always sent and cannot be covered, so the former A1-5 (left out), A1-6 (required by the site) and
+A1-15 (thread without a capture) are withdrawn; the numbers are not reused.
 
 | # | State | Trigger | What shows (copy verbatim) | Announced |
 |---|---|---|---|---|
 | A1-1 | **Taking the screenshot** | part chosen | block h3 "Sent with your report"; skeleton thumbnail; "Taking a screenshot…" / "You can write your comment meanwhile." (`aria-busy`) | — |
-| A1-2 | **Ready** | capture done | close-up thumbnail (a button, "See the screenshot full size"); "A screenshot and a copy of this page, 340 KB"; "Password fields and the fields this site marks as private are left blank." (or "Password fields are left blank." when the site marks none); link "See what will be sent"; checkbox "Leave out the screenshot and page copy" | — |
+| A1-2 | **Ready** | capture done | close-up thumbnail (a button, "See the screenshot full size"); "A screenshot and a copy of this page, 340 KB"; "Password fields and the fields this site marks as private are left blank." (or "Password fields are left blank." when the site marks none); note "A screenshot and a copy of this page are sent with every report."; link "See what will be sent" (no leave-out choice, C1) | — |
 | A1-3 | **Real capture offered** | ready, desktop Chrome/Edge, privacy mode off | as A1-2 + "Something missing from the picture, such as a video or a map? Use a real screen capture instead" (link) | — |
 | A1-4 | **Real capture asked** | the link | info callout "Your browser will ask what to share" / "Choose “This tab”. Only one picture is taken, then sharing stops." | callout text |
-| A1-5 | **Left out** | checkbox ticked | thumbnail greyed; "Nothing from the page: only your comment, the address, the screen size and the part you chose." | "The screenshot and page copy will be left out." |
-| A1-6 | **Required by the site** | site setting | as A1-2 with "This site includes a screenshot and a copy of the page with every report." first; no checkbox | — |
 | A1-7 | **Screenshot failed** | drawing failed or timed out | "No picture" box; "A copy of this page, 180 KB" / "The screenshot could not be taken, so only the page copy goes. Password fields are left blank." | — |
 | A1-8 | **Viewer: Screenshot** | thumbnail or "See what will be sent" | dialog h2 "What will be sent"; "Officials register · 2 Nov 2026 at 12:04 UTC"; tabs "Screenshot" "Page copy"; the screenshot with the part outlined; note "Screenshot · 390 × 844 at 3× · drawn by the browser: videos, maps and pictures from other sites may be missing." Full screen on a phone | focus to the heading |
 | A1-9 | **Viewer: Page copy** | tab | the page copy in a sandboxed frame (no scripts), part outlined; note "Copy of the page’s HTML · 180 KB · links and buttons in it do nothing. Password fields and private fields are left blank." | — |
@@ -305,7 +305,6 @@ copy changes (A1-11); state 19's "A copy of the page was sent…" line is replac
 | A1-12 | **Thread: sent with this report** | thread opened | block h3 "Sent with this report"; close-up thumbnail; "A screenshot and a copy of the page, taken when the report was sent"; link "View" | — |
 | A1-13 | **Thread: viewer, Screenshot** | "View" | as A1-8 with h2 "Sent with Report 41", read-only | focus to the heading |
 | A1-14 | **Thread: viewer, Page copy** | tab | as A1-9 | — |
-| A1-15 | **Thread: sent without a capture** | reporter left it out | "Sent without a screenshot or page copy: Ada Example left them out." ("you left them out" for the reporter) | — |
 
 **Tabs:** `role="tablist"`, arrow keys move between tabs, Esc closes the viewer and returns focus to the thumbnail
 or link that opened it. **Phone:** the block sits under the comment in the bottom sheet; the viewer is full screen;
