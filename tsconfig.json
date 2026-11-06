@@ -14,6 +14,9 @@
       "node"
     ]
   },
+  "exclude": [
+    "packages/sdk-browser/**"
+  ],
   "include": [
     "packages/*/src/**/*.ts",
     "packages/*/test/**/*.ts",
