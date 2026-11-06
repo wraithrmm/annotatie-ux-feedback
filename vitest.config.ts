@@ -7,7 +7,6 @@ export default defineConfig({
       "services/*/test/**/*.test.ts",
       "apps/*/test/**/*.test.ts",
       "apps/*/test/**/*.test.tsx",
-      "cli/test/**/*.test.ts",
       "tools/*/test/**/*.test.ts",
     ],
     testTimeout: 20000,

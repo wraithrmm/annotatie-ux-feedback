@@ -19,7 +19,6 @@
     "packages/*/test/**/*.ts",
     "services/*/src/**/*.ts",
     "services/*/test/**/*.ts",
-    "cli/src/**/*.ts",
     "tools/*/**/*.ts",
     "tools/*/**/*.mjs"
   ]
