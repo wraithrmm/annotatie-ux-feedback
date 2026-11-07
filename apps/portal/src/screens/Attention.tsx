@@ -156,9 +156,9 @@ export function AttentionScreen() {
 
   const chips: Array<[Filter, string, boolean]> = [
     ["all", "All", false],
-    ["draft", "To approve", true],
-    ["decision", "Decisions and questions", false],
-    ["new", "New from users", false],
+    ["draft", "Approve", true],
+    ["decision", "Decisions", false],
+    ["new", "New", false],
     ["unanswered", "Unanswered", false],
   ];
 

@@ -63,7 +63,7 @@ answer.
 - **Decisions** show the asker and a **Blocking** tag. Blocking questions sort first and, with M1 on, notify at
   once, even in quiet hours. Questions that aren't blocking wait for quiet hours to end.
 - **A question without options** gets a required "Your answer" box instead of the radios.
-- **Attention** counts questions with decisions: "Decisions and questions 2".
+- **Attention** counts questions with decisions: "Decisions 2".
 
 ## 5. The liaison loop (skill `chat-liaison`, command `/annotatie:liaison`)
 
