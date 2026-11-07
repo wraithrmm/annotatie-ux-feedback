@@ -277,6 +277,7 @@ Every tool checks the token's sites and scopes.
 | `post_message` | Reply on an item: `visibility` internal or client, `draft` true/false (the site's default applies) | reply / reply:client |
 | `set_status` | Change an item's status | status |
 | `create_item` | Raise a conversation or a decision (question, options, recommendation) | decide |
+| `create_site`, `add_site_origin`, `add_site_key`, `get_install_kit` (7 Nov 2026) | Put the widget on a site from its repository (plugin skill `install-sdk`): create a site the person owns (it joins the agent's grant), allow an origin, register a **public** site key (owner only; private keys refused), and read the tag, token-route contract and Node SDK URL (`/sdk/v1/annotatie-node.mjs`) | sites (ticked on consent by default) |
 | `link_items` | Link items (a decision to the reports it affects) | reply |
 
 **Untrusted content.** Every tool result that contains words written by a client or a snapshot wraps
