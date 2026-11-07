@@ -4,6 +4,7 @@
 //     board/                          the portal (apps/portal, Vite build)
 //     sdk/v1/annotatie.js             the widget (packages/sdk-browser)
 import { build } from "esbuild";
+import { lambdaOptions } from "./lambda-options.mjs";
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 
@@ -11,23 +12,7 @@ rmSync("dist", { recursive: true, force: true });
 
 const lambdas = ["api", "auth", "mcp", "jobs"].filter((n) => existsSync(`services/${n}/src/handler.ts`));
 for (const name of lambdas) {
-  await build({
-    entryPoints: [`services/${name}/src/handler.ts`],
-    outfile: `dist/lambda/${name}/index.mjs`,
-    bundle: true,
-    platform: "node",
-    target: "node22",
-    format: "esm",
-    minify: true,
-    sourcemap: "inline",
-    legalComments: "none",
-    // Bundle the AWS SDK too, so the deployed code is exactly what was tested.
-    external: [],
-    // Some CommonJS dependencies call require(); give the ESM bundle one.
-    banner: {
-      js: "import { createRequire as __cr } from 'node:module'; const require = __cr(import.meta.url);",
-    },
-  });
+  await build(lambdaOptions(`services/${name}/src/handler.ts`, `dist/lambda/${name}/index.mjs`));
 }
 
 mkdirSync("dist/static", { recursive: true });

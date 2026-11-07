@@ -169,5 +169,12 @@ export function createProvider({ svc, baseUrl, signing, cookieKeys }: ProviderDe
 
   const provider = new Provider(baseUrl, configuration);
   provider.proxy = true;
+  // Without these, a failure inside the provider reaches the browser as "oops! something went wrong"
+  // and leaves nothing in the logs.
+  const logError = (event: string) => (...args: unknown[]) => {
+    const err = args.find((a): a is Error => a instanceof Error);
+    console.error(JSON.stringify({ msg: "oidc error", event, error: err ? `${err.name}: ${err.message}` : undefined, stack: event === "server_error" ? err?.stack : undefined }));
+  };
+  for (const event of ["server_error", "authorization.error", "grant.error", "registration_create.error", "end_session.error"]) provider.on(event, logError(event));
   return provider;
 }
