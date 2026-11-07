@@ -10,6 +10,9 @@ import { mountRoutes } from "./app.js";
 import { cookieKeys, signingKey, type SigningKey } from "./keys.js";
 import { createProvider } from "./provider.js";
 
+/** The provider's own scopes; anything else in a registration's `scope` is dropped. */
+const OIDC_SCOPES = ["openid", "offline_access", "profile", "email"];
+
 const baseUrl = process.env.ANNOTATIE_BASE_URL ?? "https://annotatie.consulteasy.co.uk";
 const host = new URL(baseUrl).host;
 
@@ -73,8 +76,21 @@ export async function handleAuth(a: App, event: APIGatewayProxyEventV2, context:
       try {
         const meta = JSON.parse(body(event)) as Record<string, unknown>;
         const uris = Array.isArray(meta.redirect_uris) ? (meta.redirect_uris as string[]) : [];
+        let changed = false;
         if (uris.length && uris.every(isLoopback) && !meta.application_type) {
           meta.application_type = "native";
+          changed = true;
+        }
+        // Clients such as claude.ai's connectors register with `scope` set to the MCP resource's scopes
+        // (read, reply, ...). Those are resource scopes, not the provider's, which refuses them; what an
+        // agent may do is chosen on the consent screen anyway. Keep only the OpenID scopes.
+        if (typeof meta.scope === "string") {
+          const kept = meta.scope.split(" ").filter((s) => OIDC_SCOPES.includes(s));
+          if (kept.length) meta.scope = kept.join(" ");
+          else delete meta.scope;
+          changed = true;
+        }
+        if (changed) {
           const rewritten = JSON.stringify(meta);
           event = { ...event, body: rewritten, isBase64Encoded: false };
           // The body changed length: the provider reads exactly content-length bytes.

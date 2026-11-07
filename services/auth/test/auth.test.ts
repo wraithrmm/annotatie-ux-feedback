@@ -188,6 +188,31 @@ describe("an agent (MCP client)", () => {
     expect(denied.searchParams.get("error")).toBe("access_denied");
   });
 
+  it("accepts claude.ai's connector registration, which sends the resource's scopes, and its authorize request", async () => {
+    const b = new Browser();
+    const reg = await b.req("POST", "/oauth/register", {
+      json: {
+        client_name: "Claude",
+        redirect_uris: ["https://claude.ai/api/mcp/auth_callback"],
+        grant_types: ["authorization_code", "refresh_token"],
+        response_types: ["code"],
+        token_endpoint_auth_method: "client_secret_post",
+        scope: "read reply reply:user status decide capture:read sites",
+      },
+    });
+    expect(reg.status).toBe(201);
+    const client = reg.json();
+    expect(client.application_type).toBe("web");
+    expect(client.scope).toBeUndefined();
+    const { challenge } = pkce();
+    const r = await b.req(
+      "GET",
+      `/oauth/authorize?${new URLSearchParams({ client_id: client.client_id, response_type: "code", redirect_uri: "https://claude.ai/api/mcp/auth_callback", code_challenge: challenge, code_challenge_method: "S256", scope: "read reply", state: "s1", resource: `${BASE}/mcp` })}`,
+    );
+    expect(r.status).toBe(303);
+    expect(r.headers.location).toMatch(/\/oauth\/interaction\//);
+  });
+
   it("requires PKCE", async () => {
     const b = new Browser();
     const client = (await b.req("POST", "/oauth/register", { json: { redirect_uris: ["http://127.0.0.1:9999/cb"], token_endpoint_auth_method: "none" } })).json();
