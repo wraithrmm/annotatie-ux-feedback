@@ -22,3 +22,5 @@ crash.log
 
 # Local backend settings (bucket name), written from the bootstrap output
 infra/bootstrap/backend.hcl
+
+.annotatie/
