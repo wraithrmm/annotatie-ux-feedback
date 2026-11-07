@@ -258,7 +258,11 @@ export function createApp(deps: AppDeps) {
       if (p.kind === "widget") {
         if (!isWidget) throw new HttpError(403, "forbidden", "Widget tokens are for /api/w only.");
         const site = await svc.getSite(p, p.siteId);
-        if (!origin || !site.origins.includes(origin)) throw new HttpError(403, "origin_not_allowed", "This page's origin is not allowed for the site.");
+        // Browsers omit Origin on same-origin GETs. That only happens when the widget runs on
+        // Annotatie's own pages (the portal hosting it), which Sec-Fetch-Site says; then the page's
+        // origin is ours.
+        const pageOrigin = origin ?? (headers["sec-fetch-site"] === "same-origin" ? deps.baseUrl : undefined);
+        if (!pageOrigin || !site.origins.includes(pageOrigin)) throw new HttpError(403, "origin_not_allowed", "This page's origin is not allowed for the site.");
       } else if (isWidget) {
         throw new HttpError(403, "forbidden", "Portal tokens are not for the widget API.");
       } else if (origin && origin !== deps.baseUrl) {

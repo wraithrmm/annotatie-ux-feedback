@@ -49,11 +49,15 @@ beforeAll(async () => {
   app = createApp({ svc, captures: fakeCaptures, baseUrl: BASE, keys: jwks, vapidPublicKey: async () => "vapid", buildSha: "abc1234" });
 });
 
-function ev(method: string, path: string, opts: { token?: string; body?: unknown; origin?: string; query?: Record<string, string> } = {}): APIGatewayProxyEventV2 {
+function ev(method: string, path: string, opts: { token?: string; body?: unknown; origin?: string; fetchSite?: string; query?: Record<string, string> } = {}): APIGatewayProxyEventV2 {
   return {
     rawPath: path,
     requestContext: { http: { method } },
-    headers: { ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}), ...(opts.origin ? { origin: opts.origin } : {}) },
+    headers: {
+      ...(opts.token ? { authorization: `Bearer ${opts.token}` } : {}),
+      ...(opts.origin ? { origin: opts.origin } : {}),
+      ...(opts.fetchSite ? { "sec-fetch-site": opts.fetchSite } : {}),
+    },
     queryStringParameters: opts.query,
     body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
   } as unknown as APIGatewayProxyEventV2;
@@ -251,5 +255,20 @@ describe("the portal as a host: GET /api/self/widget-token", () => {
   it("refuses widget tokens (portal only)", async () => {
     const r = await call("GET", "/api/self/widget-token", { token: await widgetTok("any") });
     expect(r.status).toBe(403);
+  });
+});
+
+describe("the widget on Annotatie's own pages (same-origin GETs carry no Origin)", () => {
+  it("accepts a same-origin GET without Origin when the site allows the portal's origin, and nothing else", async () => {
+    const ownerP = { kind: "person" as const, userId: ownerId, name: "Riley Chen", via: { kind: "portal" as const } };
+    const own = await svc.createSite(ownerP, { name: "Annotatie itself", origins: [BASE] });
+    const shop = await svc.createSite(ownerP, { name: "Shop only", origins: [SHOP] });
+    const ownTok = await widgetTok(own.id);
+    expect((await call("GET", "/api/w/items", { token: ownTok, fetchSite: "same-origin", query: { mine: "1" } })).status).toBe(200);
+    // no Origin and no same-origin marker (a script elsewhere, or a cross-site page): refused
+    expect((await call("GET", "/api/w/items", { token: ownTok, query: { mine: "1" } })).status).toBe(403);
+    expect((await call("GET", "/api/w/items", { token: ownTok, fetchSite: "cross-site", query: { mine: "1" } })).status).toBe(403);
+    // a site that doesn't allow the portal's origin gains nothing from the marker
+    expect((await call("GET", "/api/w/items", { token: await widgetTok(shop.id), fetchSite: "same-origin" })).status).toBe(403);
   });
 });
