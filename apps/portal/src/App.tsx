@@ -13,6 +13,7 @@ import { DecisionsScreen, ReportsScreen } from "./screens/Lists";
 import { MoreScreen } from "./screens/More";
 import { LogScreen, NewSite, SettingsPicker, SiteSettings } from "./screens/Settings";
 import { AgentsScreen, PasskeysScreen } from "./screens/Agents";
+import { GuideScreen } from "./screens/Guide";
 
 const TITLES: Partial<Record<Route["name"], string>> = {
   attention: "Attention",
@@ -25,6 +26,7 @@ const TITLES: Partial<Record<Route["name"], string>> = {
   newSite: "Add a site",
   agents: "Agents and tokens",
   passkeys: "Passkeys",
+  guide: "How-to guide",
   notFound: "Not found",
 };
 
@@ -134,6 +136,10 @@ export function App() {
             </a>
             <a href={href.passkeys()} aria-current={current("passkeys")}>
               <span>Passkeys</span>
+              <span />
+            </a>
+            <a href={href.guide()} aria-current={current("guide")}>
+              <span>How-to guide</span>
               <span />
             </a>
             <a href={href.more()} aria-current={current("more")}>
@@ -261,6 +267,8 @@ function Screen(props: { route: Route; setItemTitle: (t: string) => void }) {
       return <AgentsScreen />;
     case "passkeys":
       return <PasskeysScreen />;
+    case "guide":
+      return <GuideScreen />;
     default:
       return (
         <p>

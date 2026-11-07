@@ -115,7 +115,7 @@ describe("tools", () => {
     const r = await rpc(fullPat, "tools/list");
     const names = r.result.tools.map((t: { name: string }) => t.name).sort();
     expect(names).toEqual(
-      ["ask_reviewer", "create_item", "get_answers", "get_changes", "get_item", "get_page_html", "get_screenshot", "link_items", "list_items", "list_questions", "list_sites", "post_message", "set_status", "withdraw_question"].sort(),
+      ["add_site_key", "add_site_origin", "ask_reviewer", "create_item", "create_site", "get_answers", "get_changes", "get_install_kit", "get_item", "get_page_html", "get_screenshot", "link_items", "list_items", "list_questions", "list_sites", "post_message", "set_status", "withdraw_question"].sort(),
     );
   });
 
@@ -174,6 +174,46 @@ describe("tools", () => {
     const sel = (await call(fullPat, "get_page_html", { site: siteId, item: reportId, selector: "h2" })).content[0]!.text!;
     expect(sel).toContain("Basket");
     expect((await call(readPat, "get_screenshot", { site: siteId, item: reportId })).isError).toBe(true);
+  });
+});
+
+describe("site setup (the sites permission)", () => {
+  const pub = { kty: "OKP" as const, crv: "Ed25519" as const, x: "11qYAYKxCrfVS_7TyWQHOg7hcvPapiMlrwIaaPcHURo" };
+
+  it("an MCP agent creates a site, which joins its grant; it allows an origin, registers a public key and gets the kit", async () => {
+    await svc.recordGrant(owner.userId, { grantId: "g-setup", clientId: "c1", clientName: "Claude Code", sites: [siteId], scopes: ["read", "sites"] });
+    const tok = await signMcp({ sub: owner.userId, gid: "g-setup", client_id: "c1", scope: "read sites" });
+    const made = data(await call(tok, "create_site", { name: "Blog", origins: ["https://blog.example.com"] }));
+    expect(made.site.role).toBe("owner");
+    expect((await svc.grant("g-setup"))!.sites).toEqual([siteId, made.site.id]);
+    // a fresh token on the same grant can use the new site straight away
+    const tok2 = await signMcp({ sub: owner.userId, gid: "g-setup", client_id: "c1", scope: "read sites" });
+    const o = data(await call(tok2, "add_site_origin", { site: made.site.id, origin: "https://staging.blog.example.com/" }));
+    expect(o.site.origins).toEqual(["https://blog.example.com", "https://staging.blog.example.com"]);
+    const k = data(await call(tok2, "add_site_key", { site: made.site.id, kid: "k-1", public_key_jwk: pub }));
+    expect(k.key).toMatchObject({ kid: "k-1", status: "active" });
+    const kit = data(await call(tok2, "get_install_kit", { site: made.site.id }));
+    expect(kit.script_tag).toBe(`<script src="${BASE}/sdk/v1/annotatie.js" data-site="${made.site.id}" data-token-url="/annotatie/token" async></script>`);
+    expect(kit.node_sdk.url).toBe(`${BASE}/sdk/v1/annotatie-node.mjs`);
+  });
+
+  it("refuses without the sites permission, a private key, and keys on a site the agent's person doesn't own", async () => {
+    const r = await call(fullPat, "create_site", { name: "Nope", origins: ["https://nope.example.com"] });
+    expect(r.isError).toBe(true);
+    expect(r.content[0]!.text).toMatch(/sites scope/);
+    const k = await call(fullPat, "add_site_key", { site: siteId, kid: "x", public_key_jwk: pub });
+    expect(k.isError).toBe(true);
+
+    const setupPat = (await svc.createToken(owner, { name: "Setup", sites: [siteId], scopes: ["read", "sites"] })).token;
+    const priv = await call(setupPat, "add_site_key", { site: siteId, kid: "x", public_key_jwk: { ...pub, d: "secret" } });
+    expect(priv.isError).toBe(true);
+
+    const other = await person(svc, "Sam Member");
+    await svc.addMember(siteId, other.userId, "member");
+    const memberPat = (await svc.createToken(other, { name: "Setup", sites: [siteId], scopes: ["read", "sites"] })).token;
+    const notOwner = await call(memberPat, "add_site_key", { site: siteId, kid: "y", public_key_jwk: pub });
+    expect(notOwner.isError).toBe(true);
+    expect(notOwner.content[0]!.text).toMatch(/owner/);
   });
 });
 

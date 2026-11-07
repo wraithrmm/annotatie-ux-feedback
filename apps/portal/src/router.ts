@@ -14,6 +14,7 @@ export type Route =
   | { name: "newSite" }
   | { name: "agents" }
   | { name: "passkeys" }
+  | { name: "guide" }
   | { name: "notFound" };
 
 export function parseHash(hash: string): Route {
@@ -32,6 +33,7 @@ export function parseHash(hash: string): Route {
   if (p[0] === "settings" && p.length === 1) return { name: "settingsPicker" };
   if (p[0] === "agents" && p.length === 1) return { name: "agents" };
   if (p[0] === "passkeys" && p.length === 1) return { name: "passkeys" };
+  if (p[0] === "guide" && (p.length === 1 || (p.length === 2 && (p[1] === "claude" || p[1] === "sdk")))) return { name: "guide" };
   if (p[0] === "sites" && p[1] === "new" && p.length === 2) return { name: "newSite" };
   if (p[0] === "sites" && p[1] && p.length === 3 && p[2] === "reports") return { name: "reports", siteId: p[1] };
   if (p[0] === "sites" && p[1] && p.length === 3 && p[2] === "settings") return { name: "settings", siteId: p[1] };
@@ -53,6 +55,7 @@ export const href = {
   newSite: () => "#/sites/new",
   agents: () => "#/agents",
   passkeys: () => "#/passkeys",
+  guide: (tab?: "claude" | "sdk") => (tab ? `#/guide/${tab}` : "#/guide"),
 };
 
 /** Screens that replace the bottom bar with a back arrow (PT-2 §3), and where back goes. */
@@ -67,6 +70,7 @@ export function parentOf(r: Route): string | null {
     case "newSite":
     case "agents":
     case "passkeys":
+    case "guide":
       return href.more();
     default:
       return null;

@@ -53,6 +53,14 @@ export function MoreScreen() {
           <span>Passkeys</span>
           <span aria-hidden="true">›</span>
         </a>
+        <a href={href.guide()}>
+          <span>
+            How-to guide
+            <br />
+            <span class="meta">Connect Claude, install the widget</span>
+          </span>
+          <span aria-hidden="true">›</span>
+        </a>
         <button type="button" onClick={signOut}>
           <span>
             Sign out

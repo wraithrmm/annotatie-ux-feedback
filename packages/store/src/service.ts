@@ -3,6 +3,7 @@
 
 import { createHash } from "node:crypto";
 import {
+  AGENT_SCOPES,
   type AgentGrant,
   type AgentScope,
   type Attention,
@@ -226,7 +227,8 @@ export class Service {
     return countsOf(items);
   }
 
-  async createSite(p: PersonPrincipal, body: { name?: unknown; origins?: unknown }): Promise<Site> {
+  async createSite(p: PersonPrincipal | AgentPrincipal, body: { name?: unknown; origins?: unknown }): Promise<Site> {
+    if (p.kind === "agent" && !p.scopes.has("sites")) throw new HttpError(403, "insufficient_scope", "This token lacks the sites scope.");
     const name = reqStr(body.name, "name", LIMITS.name);
     const origins = parseOrigins(body.origins ?? []);
     const id = newId(this.now().getTime());
@@ -255,8 +257,35 @@ export class Service {
       { Put: { TableName: this.db.table, Item: { pk: "SITES", sk: `SITE#${id}` } } },
     ]);
     await this.log(id, "site.updated", p, { detail: { created: true, name } });
+    if (p.kind === "agent") await this.addSiteToAgent(p, id);
     const { nextNumber: _n, ...out } = site;
     return { ...out, role: "owner", counts: { open: 0, drafts: 0, decisions: 0, unanswered: 0 } };
+  }
+
+  /** A site an agent created joins the sites its grant (or token) may use. */
+  private async addSiteToAgent(p: AgentPrincipal, siteId: string): Promise<void> {
+    if (!p.sites) return;
+    const sites = [...new Set([...p.sites, siteId])];
+    if (p.grantId) {
+      await this.db.update(`GRANT#${p.grantId}`, "META", { sites });
+      await this.db.update(`USER#${p.userId}`, `GRANT#${p.grantId}`, { sites });
+    } else if (p.patId) {
+      const r = await this.db.get<Rec & { hash: string }>(`USER#${p.userId}`, `PAT#${p.patId}`);
+      if (r) {
+        await this.db.update(`PAT#${r.hash}`, "META", { sites });
+        await this.db.update(`USER#${p.userId}`, `PAT#${p.patId}`, { sites });
+      }
+    }
+    (p as { sites: string[] | null }).sites = sites;
+  }
+
+  /** Allow one more origin (an agent installing the widget on a site). Owner only. */
+  async addOrigin(p: PersonPrincipal | AgentPrincipal, siteId: string, origin: unknown): Promise<Site> {
+    const { site } = await this.access(p, siteId, "owner", "sites");
+    const origins = parseOrigins([...site.origins, origin]);
+    await this.db.update(`SITE#${siteId}`, "META", { origins });
+    await this.log(siteId, "site.updated", p, { detail: { origins } });
+    return this.getSite(p, siteId);
   }
 
   async getSite(p: Principal, siteId: string): Promise<Site> {
@@ -312,8 +341,8 @@ export class Service {
     return k && k.status === "active" ? strip<SiteKey>(k) : undefined;
   }
 
-  async addKey(p: PersonPrincipal, siteId: string, body: { kid?: unknown; publicKeyJwk?: unknown }): Promise<SiteKey> {
-    await this.access(p, siteId, "owner");
+  async addKey(p: PersonPrincipal | AgentPrincipal, siteId: string, body: { kid?: unknown; publicKeyJwk?: unknown }): Promise<SiteKey> {
+    await this.access(p, siteId, "owner", "sites");
     const jwk = body.publicKeyJwk as Record<string, unknown> | undefined;
     if (!jwk || jwk.kty !== "OKP" || jwk.crv !== "Ed25519" || typeof jwk.x !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(jwk.x)) {
       throw new HttpError(400, "invalid_request", "publicKeyJwk must be an Ed25519 public JWK ({ kty: OKP, crv: Ed25519, x }).");
@@ -1052,6 +1081,7 @@ export class Service {
       sites: r.sites,
       scopes: new Set(r.scopes),
       via: { kind: "token", clientName: r.name, clientId: `pat:${r.id}` },
+      patId: r.id,
     };
   }
 
@@ -1304,7 +1334,7 @@ function parseOrigins(v: unknown): string[] {
 }
 
 function parseScopes(v: unknown): AgentScope[] {
-  const all = ["read", "reply", "reply:user", "status", "decide", "capture:read"];
+  const all: readonly string[] = AGENT_SCOPES;
   if (!Array.isArray(v) || !v.length) throw new HttpError(400, "invalid_request", "Choose at least one scope.");
   for (const s of v) if (!all.includes(String(s))) throw new HttpError(400, "invalid_request", `Unknown scope: ${s}`);
   return [...new Set(v.map(String))] as AgentScope[];

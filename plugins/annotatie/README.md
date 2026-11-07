@@ -8,6 +8,8 @@ One install gives an agent the Annotatie connector, its skills, and the rules fo
 /plugin marketplace add wraithrmm/annotatie-ux-feedback
 /plugin install annotatie@annotatie
 /mcp                      sign in to "annotatie" as yourself
+/annotatie:respond        in the session that answers reports (or /annotatie:respond 5m)
+/annotatie:install        in a site's repository, to put the widget on it
 /annotatie:liaison 5m     in the session that orchestrates other agents
 ```
 
@@ -24,6 +26,10 @@ The repository is private: Claude Code clones it with your own git credentials (
 | `skills/ask-the-reviewer` | How every question to a person is asked, waited on and resumed |
 | `skills/triage-reports` | Working a user's report: capture first, then answer, fix or ask |
 | `skills/chat-liaison` | The liaison role and its status loop |
+| `skills/report-responder` | The loop that picks up new reports, users' follow-ups and rejected drafts, and answers each |
+| `skills/install-sdk` | Puts the widget on the site in the current repository: site, key, token route, tag, CSP, tests |
+| `/annotatie:respond [interval]` | Starts the report responder |
+| `/annotatie:install [origin]` | Installs the widget on this repository's site |
 | `/annotatie:status` | One status tick |
 | `/annotatie:liaison [interval]` | Starts the liaison loop |
 | `hooks/session-start.mjs` | Puts the mandatory rules into context at the start of every session |

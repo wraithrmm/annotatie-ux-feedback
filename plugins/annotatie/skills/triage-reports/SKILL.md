@@ -37,8 +37,10 @@ area there is not the bug.
 
 - **Internal note first** (`visibility: "internal"`): what you saw in the capture, the cause, the fix or the
   question number, commit and deployment.
-- **Then the draft reply** (`visibility: "client"`): plain words, what changed and where they'll see it, or the
-  one thing you need from them. No promises of dates. Never mention being an AI. It is signed by the reviewer.
+- **Then the reply** (`visibility: "user"`): plain words, what changed and where they'll see it, or the one
+  thing you need from them. No promises of dates. Never mention being an AI. It is signed by the reviewer. It
+  waits as a draft for the reviewer, **unless the site has auto-approve on (`list_sites`), when it reaches the
+  user at once**: then write only what you would send unchecked, and ask the reviewer when in doubt.
 - **Status:** `in_progress` while you fix; leave `answered` and `resolved` to the reviewer unless you were told
   otherwise. "Fixed" means deployed where the user can see it.
 

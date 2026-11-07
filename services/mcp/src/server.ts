@@ -99,6 +99,12 @@ const run =
     }
   };
 
+/** Where the widget uploads captures (the presigned POST's origin). */
+function capturesOrigin(): string {
+  const bucket = process.env.CAPTURE_BUCKET;
+  return bucket ? `https://${bucket}.s3.${process.env.AWS_REGION ?? "eu-west-2"}.amazonaws.com` : "the Annotatie captures bucket";
+}
+
 /** Cut text to `max` characters, saying so. */
 function cap(text: string, max: number, what: string): string {
   if (text.length <= max) return text;
@@ -162,6 +168,82 @@ export function createMcpServer(p: AgentPrincipal, { svc, captures, baseUrl }: M
     "list_sites",
     { description: "The sites you can see, with item counts by status.", inputSchema: {}, annotations: { readOnlyHint: true } },
     run(async () => json((await svc.mySites(p, true)).map((s) => ({ id: s.id, name: s.name, role: s.role, origins: s.origins, counts: s.counts })))),
+  );
+
+  // ---- site setup (scope "sites"): what the install-sdk skill uses to put the widget on a site.
+  const origin = z.string().describe('The site’s web origin, e.g. "https://shop.example.com" (scheme, host, port only).');
+
+  server.registerTool(
+    "create_site",
+    {
+      description:
+        "Create a site you own, allowing the given origins (needs the sites permission). The new site joins the sites this connection may use. Check list_sites first: don't create a second site for the same web address.",
+      inputSchema: { name: z.string().min(1).max(120), origins: z.array(origin).min(1).max(20) },
+    },
+    run(async (a) => {
+      const s = await svc.createSite(p, { name: a.name, origins: a.origins });
+      return json({ site: { id: s.id, name: s.name, origins: s.origins, role: s.role }, next: "Register the site's public key with add_site_key, then get_install_kit." });
+    }),
+  );
+
+  server.registerTool(
+    "add_site_origin",
+    {
+      description: "Allow one more web origin to show the widget for a site you own (needs the sites permission), e.g. a staging address.",
+      inputSchema: { site, origin },
+    },
+    run(async (a) => {
+      const s = await svc.addOrigin(p, a.site, a.origin);
+      return json({ site: { id: s.id, name: s.name, origins: s.origins } });
+    }),
+  );
+
+  server.registerTool(
+    "add_site_key",
+    {
+      description:
+        "Register a site's PUBLIC Ed25519 key (a JWK with kty OKP, crv Ed25519 and x only) for a site you own (needs the sites permission). The host's server signs its users' assertions with the private half, which never leaves the host's own secret store: never pass it here or anywhere else.",
+      inputSchema: {
+        site,
+        kid: z.string().min(1).max(64).describe("The key id the host signs with (the SDK's generateSiteKey() gives the RFC 7638 thumbprint)."),
+        public_key_jwk: z.object({ kty: z.literal("OKP"), crv: z.literal("Ed25519"), x: z.string() }).strict(),
+      },
+    },
+    run(async (a) => {
+      const k = await svc.addKey(p, a.site, { kid: a.kid, publicKeyJwk: a.public_key_jwk });
+      return json({ key: { kid: k.kid, status: k.status, created_at: k.createdAt } });
+    }),
+  );
+
+  server.registerTool(
+    "get_install_kit",
+    {
+      description:
+        "Everything needed to put the widget on a site: its id, allowed origins, the script tag, the host token route contract and the Node SDK's URL. Read-only.",
+      inputSchema: { site },
+      annotations: { readOnlyHint: true },
+    },
+    run(async (a) => {
+      const s = await svc.getSite(p, a.site);
+      return json({
+        site_id: s.id,
+        name: s.name,
+        origins: s.origins,
+        annotatie_base: baseUrl,
+        script_tag: `<script src="${baseUrl}/sdk/v1/annotatie.js" data-site="${s.id}" data-token-url="/annotatie/token" async></script>`,
+        node_sdk: { url: `${baseUrl}/sdk/v1/annotatie-node.mjs`, note: "One file, node:crypto only, no dependencies. Vendor it into the host's repository." },
+        host_token_route: {
+          path: "GET /annotatie/token (same origin as the page, behind the host's own sign-in)",
+          returns: '{ "access_token": "...", "expires_in": 300 } with Cache-Control: no-store, or 401/403 for anyone who may not report',
+          how: `Sign a 60-second EdDSA JWS (header alg EdDSA, typ JWT, kid) with claims iss=<site_id>, sub=<host user id>, name, email (optional), aud=${baseUrl}/oauth/token, iat, exp=iat+60, jti (random), then POST grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=<jws> to ${baseUrl}/oauth/token and return its access_token and expires_in.`,
+        },
+        rules: [
+          "Emit the script tag only for signed-in users the host permits to report; everyone else's page carries no trace of Annotatie.",
+          "The private key lives only in the host's secret store or an untracked .env, never in a committed file.",
+          `If the host sends a Content-Security-Policy: script-src and connect-src need ${baseUrl}; connect-src and img-src also need ${capturesOrigin()} (screenshots upload there).`,
+        ],
+      });
+    }),
   );
 
   server.registerTool(

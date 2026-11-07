@@ -287,3 +287,11 @@ kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:4px;pad
 .mt8{margin-top:8px} .mt12{margin-top:12px} .mt16{margin-top:16px}
 .toast.show{display:block}
 h1[tabindex="-1"]:focus{outline:none}
+
+/* How-to guide: copyable commands and numbered steps. */
+.guide .tabs{margin-bottom:4px}
+.cmd{display:flex;gap:8px;align-items:flex-start}
+.cmd pre{flex:1;min-width:0;margin:0;padding:10px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.cmd pre code{background:none;padding:0;font-size:inherit;overflow-wrap:normal}
+.cmd .btn{flex:none}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}

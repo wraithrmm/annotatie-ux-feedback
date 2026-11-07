@@ -74,5 +74,6 @@ export async function mcpPrincipal(claims: JWTPayload & Record<string, unknown>,
     sites: grant.sites,
     scopes,
     via: { kind: "agent", clientName: grant.clientName, clientId: grant.clientId },
+    grantId,
   };
 }

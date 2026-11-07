@@ -80,6 +80,7 @@ ${siteRows}
 <label class="check"><input type="checkbox" name="scope" value="status" checked> Change statuses</label>
 <label class="check"><input type="checkbox" name="scope" value="decide" checked> Raise decisions and ask you questions</label>
 <label class="check"><input type="checkbox" name="scope" value="capture:read" checked> Open screenshots and page copies</label>
+<label class="check"><input type="checkbox" name="scope" value="sites" checked> Set up sites for you: create sites, allow their web addresses and register their site keys, so it can install the widget (only on sites you own)</label>
 </fieldset>
 <div class="callout"><b>It can't reach your users directly.</b>Its replies to a site's users wait for your approval, unless auto-approve is on for that site.</div>
 <p class="meta">You can revoke this at any time under More › Agents and tokens.</p>

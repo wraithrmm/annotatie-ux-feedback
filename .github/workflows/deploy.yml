@@ -118,4 +118,5 @@ jobs:
           echo "$hdr" | grep -qi 'www-authenticate: Bearer resource_metadata='
           # P4: the widget script
           curl -fsS -o /dev/null "$BASE/sdk/v1/annotatie.js"
+          curl -fsS -o /dev/null "$BASE/sdk/v1/annotatie-node.mjs"
           echo "Deployed ${GITHUB_SHA} to $BASE" >> "$GITHUB_STEP_SUMMARY"

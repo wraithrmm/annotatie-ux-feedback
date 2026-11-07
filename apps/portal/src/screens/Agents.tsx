@@ -16,8 +16,9 @@ export const SCOPE_LABEL: Record<AgentScope, string> = {
   status: "Change statuses",
   decide: "Raise decisions and questions for you",
   "capture:read": "Open screenshots and page copies",
+  sites: "Set up sites: create them, allow their addresses, register site keys (on sites you own)",
 };
-const SCOPE_SHORT: Record<string, string> = { read: "read", reply: "notes", "reply:user": "drafts", status: "statuses", decide: "decisions", "capture:read": "captures" };
+const SCOPE_SHORT: Record<string, string> = { read: "read", reply: "notes", "reply:user": "drafts", status: "statuses", decide: "decisions", "capture:read": "captures", sites: "site setup" };
 
 export function AgentsScreen() {
   const { api, me, toast } = useStore();

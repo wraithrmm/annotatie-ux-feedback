@@ -23,7 +23,8 @@ export const ITEM_STATUSES: readonly ItemStatus[] = [
 ];
 
 /** Agent scopes (consent screen and personal access tokens). There is deliberately no publish scope. */
-export const AGENT_SCOPES = ["read", "reply", "reply:user", "status", "decide", "capture:read"] as const;
+/** "sites": create sites, allow their origins and register their site keys (installing the widget). */
+export const AGENT_SCOPES = ["read", "reply", "reply:user", "status", "decide", "capture:read", "sites"] as const;
 export type AgentScope = (typeof AGENT_SCOPES)[number];
 
 export interface Person {

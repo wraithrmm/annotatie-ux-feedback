@@ -20,6 +20,9 @@ export interface AgentPrincipal {
   sites: string[] | null;
   scopes: ReadonlySet<AgentScope>;
   via: Via;
+  /** Where the agent's site list is kept, so a site it creates joins it. */
+  grantId?: string;
+  patId?: string;
 }
 
 /** A person on a host site, through the widget. */

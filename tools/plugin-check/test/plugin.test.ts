@@ -63,8 +63,8 @@ describe("skills and commands", () => {
   const skills = readdirSync(join(plugin, "skills"));
   const commands = readdirSync(join(plugin, "commands")).map((f) => f.replace(/\.md$/, ""));
 
-  it("has the four skills, each named after its folder with a description", () => {
-    expect(skills.sort()).toEqual(["ask-the-reviewer", "chat-liaison", "triage-reports", "using-annotatie"]);
+  it("has the six skills, each named after its folder with a description", () => {
+    expect(skills.sort()).toEqual(["ask-the-reviewer", "chat-liaison", "install-sdk", "report-responder", "triage-reports", "using-annotatie"]);
     for (const s of skills) {
       const fm = frontmatter(join(plugin, "skills", s, "SKILL.md"));
       expect(fm.name).toBe(s);
@@ -73,8 +73,8 @@ describe("skills and commands", () => {
     }
   });
 
-  it("has the status and liaison commands, and no skill shares a command's name", () => {
-    expect(commands.sort()).toEqual(["liaison", "status"]);
+  it("has the install, liaison, respond and status commands, and no skill shares a command's name", () => {
+    expect(commands.sort()).toEqual(["install", "liaison", "respond", "status"]);
     for (const c of commands) expect(frontmatter(join(plugin, "commands", `${c}.md`)).description).toBeTruthy();
     for (const c of commands) expect(skills).not.toContain(c);
   });

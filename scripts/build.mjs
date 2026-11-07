@@ -3,6 +3,7 @@
 //   dist/static/                      files served from the static bucket via CloudFront
 //     board/                          the portal (apps/portal, Vite build)
 //     sdk/v1/annotatie.js             the widget (packages/sdk-browser)
+//     sdk/v1/annotatie-node.mjs       the Node SDK as one file (packages/sdk-server-node)
 import { build } from "esbuild";
 import { lambdaOptions } from "./lambda-options.mjs";
 import { execSync } from "node:child_process";
@@ -36,6 +37,22 @@ if (existsSync("packages/sdk-browser/src/index.ts")) {
     format: "iife",
     minify: true,
     legalComments: "none",
+  });
+}
+
+// The Node SDK as one downloadable file (node:crypto only), for hosts to vendor into their repository:
+// the install-sdk skill fetches it from /sdk/v1/annotatie-node.mjs.
+if (existsSync("packages/sdk-server-node/src/index.ts")) {
+  await build({
+    entryPoints: ["packages/sdk-server-node/src/index.ts"],
+    outfile: "dist/static/sdk/v1/annotatie-node.mjs",
+    bundle: true,
+    platform: "node",
+    target: ["node20"],
+    format: "esm",
+    minify: false,
+    legalComments: "none",
+    banner: { js: "// @annotatie/sdk-server-node, v1 — https://annotatie.consulteasy.co.uk/sdk/v1/annotatie-node.mjs\n// Vendored copy: keep the private site key in your secrets store, never in a file in the repository." },
   });
 }
 
