@@ -17,6 +17,17 @@ The repository is private: Claude Code clones it with your own git credentials (
 `gh auth login` then `gh auth setup-git`). Turn on auto-update for the marketplace in `/plugin`, or run
 `/plugin marketplace update annotatie`.
 
+## Cloud sessions (web, phone, scheduled)
+
+`/plugin` is not available in cloud sessions. Instead, this repository's `.claude/settings.json` adds the
+marketplace and enables `annotatie@annotatie`, so every new cloud session on this repository loads the plugin
+at startup. To get the same in another repository's sessions, copy that file into it.
+
+A cloud session can't complete the connector's OAuth sign-in by itself, and a scheduled session has no one at
+the keyboard to do it. If the connector shows as needing authentication there, also add
+`https://annotatie.consulteasy.co.uk/mcp` as a custom connector at claude.ai/customize/connectors. That
+connector's tools are named `mcp__annotatie__<tool>` rather than `mcp__plugin_annotatie_annotatie__<tool>`.
+
 ## What's in it
 
 | Part | What it does |
