@@ -19,8 +19,21 @@ export class Offline extends Error {
   }
 }
 
+/** What a host's own token function returns: null when this person may not report. */
+export interface HostToken {
+  access_token: string;
+  expires_in: number;
+}
+
 export interface TokenSourceOptions {
+  /** The host's same-origin token endpoint (cookie session). Ignored when `getToken` is given. */
   url: string;
+  /**
+   * For hosts whose session is not a cookie (a single-page app holding a bearer token): fetch the widget
+   * token from the host's server yourself. Resolve null when the person may not report; throw when the
+   * host's server could not be reached.
+   */
+  getToken?: () => Promise<HostToken | null>;
   fetch?: typeof fetch;
   now?: () => number;
   setTimer?: (fn: () => void, ms: number) => unknown;
@@ -74,6 +87,16 @@ export class TokenSource {
   }
 
   private async fetchToken(): Promise<string> {
+    if (this.opts.getToken) {
+      let host: HostToken | null;
+      try {
+        host = await this.opts.getToken();
+      } catch {
+        throw new Offline();
+      }
+      if (!host) throw new SignInEnded(403);
+      return this.accept(host);
+    }
     let res: Response;
     try {
       res = await this.fetchFn(this.opts.url, {
@@ -87,13 +110,16 @@ export class TokenSource {
     }
     if (res.status === 401 || res.status === 403 || res.status === 419) throw new SignInEnded(res.status);
     if (!res.ok) throw new Error(`token endpoint answered ${res.status}`);
-    const json = (await res.json()) as { access_token?: unknown; expires_in?: unknown };
+    return this.accept((await res.json()) as { access_token?: unknown; expires_in?: unknown });
+  }
+
+  private accept(json: { access_token?: unknown; expires_in?: unknown }): string {
     if (typeof json.access_token !== "string" || typeof json.expires_in !== "number" || json.expires_in <= 0)
       throw new Error("token endpoint: unexpected response");
     this.token = json.access_token;
     this.expiresAt = this.now() + json.expires_in * 1000;
     this.schedule(json.expires_in * 1000);
-    return this.token;
+    return json.access_token;
   }
 
   private schedule(lifetimeMs: number): void {

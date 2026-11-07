@@ -61,7 +61,8 @@ resource "aws_cloudfront_function" "index" {
 }
 
 # The portal's headers: the managed security set plus a strict CSP (no inline script; styles inline for
-# the page-copy viewer; images also from the captures bucket by presigned URL).
+# the page-copy viewer; images also from the captures bucket by presigned URL). The portal also hosts the
+# widget for Annotatie's own site, whose captures upload straight to the bucket by presigned POST.
 resource "aws_cloudfront_response_headers_policy" "static" {
   name    = "${var.name}-static"
   comment = "Security headers and CSP for the portal"
@@ -74,7 +75,7 @@ resource "aws_cloudfront_response_headers_policy" "static" {
         "script-src 'self'",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: ${var.captures_origin}",
-        "connect-src 'self'",
+        "connect-src 'self' ${var.captures_origin}",
         "worker-src 'self'",
         "manifest-src 'self'",
         "frame-src 'self' blob:",

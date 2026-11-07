@@ -15,6 +15,7 @@ let otherKey: CryptoKey;
 let app: ReturnType<typeof createApp>;
 let svc: Service;
 let ownerId: string;
+let jwks: ReturnType<typeof createLocalJWKSet>;
 
 const fakeCaptures: CaptureStore = {
   async uploadPolicies(_s, _i, files) {
@@ -44,7 +45,8 @@ beforeAll(async () => {
     new SignJWT(claims).setProtectedHeader({ alg: "ES256", kid: "k1" }).setIssuer(BASE).setAudience(aud).setIssuedAt().setExpirationTime("5m").sign(key);
   svc = new Service(await freshDb(), { autoApproveAllowed: true, baseUrl: BASE });
   ownerId = await svc.createUser("Riley Chen", "riley@example.com");
-  app = createApp({ svc, captures: fakeCaptures, baseUrl: BASE, keys: createLocalJWKSet({ keys: [jwk] }), vapidPublicKey: async () => "vapid", buildSha: "abc1234" });
+  jwks = createLocalJWKSet({ keys: [jwk] });
+  app = createApp({ svc, captures: fakeCaptures, baseUrl: BASE, keys: jwks, vapidPublicKey: async () => "vapid", buildSha: "abc1234" });
 });
 
 function ev(method: string, path: string, opts: { token?: string; body?: unknown; origin?: string; query?: Record<string, string> } = {}): APIGatewayProxyEventV2 {
@@ -195,5 +197,59 @@ describe("page copy sanitising (server side)", () => {
     expect(out).not.toMatch(/<script|onload|onerror|javascript:|<iframe|<object|<base|http-equiv|<link|data:text\/html|https:\/\/tracker|@import|https:\/\/evil/i);
     expect(out).toContain("data-annotatie-target");
     expect(out).toContain("kept");
+  });
+});
+
+describe("the portal as a host: GET /api/self/widget-token", () => {
+  it("signs an assertion for members of Annotatie's own site and exchanges it; 404 for everyone else", async () => {
+    expect((await call("GET", "/api/self/widget-token", { token: await portal() })).status).toBe(404);
+
+    const { generateSiteKey } = await import("@annotatie/sdk-server-node");
+    const { decodeJwt, decodeProtectedHeader } = await import("jose");
+    const key = generateSiteKey();
+    const ownerP = { kind: "person" as const, userId: ownerId, name: "Riley Chen", via: { kind: "portal" as const } };
+    const site = await svc.createSite(ownerP, { name: "Annotatie", origins: [BASE] });
+    const outsiderId = await svc.createUser("Ola Out", "ola@example.com");
+    const seen: string[] = [];
+    let refuse = false;
+    const selfApp = createApp({
+      svc,
+      captures: fakeCaptures,
+      baseUrl: BASE,
+      keys: jwks,
+      vapidPublicKey: async () => "vapid",
+      buildSha: "abc1234",
+      selfSite: async () => ({ siteId: site.id, kid: key.kid, privateKeyPem: key.privateKeyPem }),
+      exchange: async (a) => {
+        if (refuse) throw new Error("invalid_grant");
+        seen.push(a);
+        return { access_token: "widget-tok", expires_in: 300, scope: "report" };
+      },
+    });
+    const get = async (sub: string) => {
+      const r = await selfApp(ev("GET", "/api/self/widget-token", { token: await sign({ sub, client_id: "annotatie-portal", scope: "openid" }) }));
+      return { status: r.statusCode!, body: JSON.parse(r.body ?? "null"), headers: r.headers as Record<string, string> };
+    };
+
+    const ok = await get(ownerId);
+    expect(ok.status).toBe(200);
+    expect(ok.body).toEqual({ siteId: site.id, access_token: "widget-tok", expires_in: 300 });
+    expect(ok.headers["cache-control"]).toBe("no-store");
+    expect(JSON.stringify(ok.body)).not.toContain("PRIVATE");
+    expect(decodeProtectedHeader(seen[0]!)).toMatchObject({ alg: "EdDSA", kid: key.kid });
+    expect(decodeJwt(seen[0]!)).toMatchObject({ iss: site.id, sub: ownerId, name: "Riley Chen", email: "riley@example.com", aud: `${BASE}/oauth/token` });
+
+    expect((await get(outsiderId)).status).toBe(404);
+    expect(seen).toHaveLength(1);
+
+    refuse = true;
+    const down = await get(ownerId);
+    expect(down.status).toBe(502);
+    expect(down.body.error).toBe("token_unavailable");
+  });
+
+  it("refuses widget tokens (portal only)", async () => {
+    const r = await call("GET", "/api/self/widget-token", { token: await widgetTok("any") });
+    expect(r.status).toBe(403);
   });
 });

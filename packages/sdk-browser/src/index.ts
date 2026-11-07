@@ -9,7 +9,7 @@
 // token endpoint refuses, nothing is drawn. The widget defines no globals, sets no cookies and stores
 // nothing personal; everything it draws is inside a closed shadow root.
 import { Api } from "./api.js";
-import { TokenSource } from "./token.js";
+import { type HostToken, TokenSource } from "./token.js";
 import { themeName, type ThemeName } from "./ui/theme.js";
 import { Widget } from "./ui/widget.js";
 
@@ -19,6 +19,11 @@ export interface StartOptions {
   siteId: string;
   /** The host's own token endpoint (same origin). Default `/annotatie/token`. */
   tokenUrl?: string;
+  /**
+   * Instead of `tokenUrl`, for hosts whose session is a bearer token rather than a cookie: return the
+   * widget token from your own server, or null when this person may not report.
+   */
+  getToken?: () => Promise<HostToken | null>;
   /** Annotatie's origin. Default https://annotatie.consulteasy.co.uk. */
   base?: string;
   theme?: ThemeName;
@@ -28,6 +33,8 @@ export interface StartOptions {
   /** The host's route name for the current page, if it has one. */
   route?: () => string | undefined;
 }
+
+export type { HostToken };
 
 export interface Annotatie {
   stop(): void;
@@ -45,7 +52,10 @@ export async function start(options: StartOptions): Promise<Annotatie | null> {
   if (running) return { stop: () => stopRunning() };
   if (!options?.siteId) return null;
   const base = (options.base ?? DEFAULT_BASE).replace(/\/+$/, "");
-  const tokens = new TokenSource({ url: options.tokenUrl ?? "/annotatie/token" });
+  const tokens = new TokenSource({
+    url: options.tokenUrl ?? "/annotatie/token",
+    ...(options.getToken ? { getToken: options.getToken } : {}),
+  });
   try {
     await tokens.get();
   } catch {

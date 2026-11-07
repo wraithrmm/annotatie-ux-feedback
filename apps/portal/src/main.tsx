@@ -7,6 +7,7 @@ import { createApi } from "./api";
 import { Auth, AuthError, type AuthEnv } from "./auth";
 import { App } from "./App";
 import { StoreProvider } from "./store";
+import { startFeedback } from "./feedback";
 
 const SIGNED_OUT = "annotatie.signedout";
 
@@ -32,6 +33,7 @@ async function boot() {
   const origin = location.origin;
   let fetchImpl: typeof fetch = (input, init) => fetch(input, init);
   let navigate = (url: string) => location.assign(url);
+  let mocked = false;
 
   // The mock exists only in dev and e2e builds; in a production build this branch is removed.
   if (import.meta.env.DEV || import.meta.env.MODE === "e2e") {
@@ -39,6 +41,7 @@ async function boot() {
       const { createMock } = await import("./mock/server");
       const mock = createMock(origin);
       fetchImpl = mock.fetch as typeof fetch;
+      mocked = true;
       navigate = mock.navigate;
       (window as unknown as { __mock: unknown }).__mock = mock.controls;
     }
@@ -91,6 +94,11 @@ async function boot() {
     </StoreProvider>,
     root,
   );
+
+  // Feedback on the portal itself, for members of Annotatie's own site only (and never in the mock).
+  if (!mocked) {
+    void startFeedback((path) => auth.fetch(origin + path, { headers: { Accept: "application/json" } }), origin).catch(() => undefined);
+  }
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`, { scope: import.meta.env.BASE_URL }).catch(() => undefined);

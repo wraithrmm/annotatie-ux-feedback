@@ -1,7 +1,7 @@
 // The API Lambda (docs/api.md). Configuration from the environment set by OpenTofu.
 import type { APIGatewayProxyEventV2, APIGatewayProxyStructuredResultV2 } from "aws-lambda";
-import { Db, jwksFor, makePushNotifier, Service, vapidKeys } from "@annotatie/store";
-import { createApp } from "./app.js";
+import { Db, jwksFor, makePushNotifier, readSecret, SECRET_NAMES, Service, vapidKeys } from "@annotatie/store";
+import { createApp, type SelfSite } from "./app.js";
 import { s3Captures } from "./captures.js";
 
 const baseUrl = process.env.ANNOTATIE_BASE_URL ?? "https://annotatie.consulteasy.co.uk";
@@ -21,6 +21,10 @@ function init() {
     keys: jwksFor(baseUrl),
     vapidPublicKey: async () => (await vapidKeys()).publicKey,
     buildSha: process.env.BUILD_SHA ?? "dev",
+    selfSite: async () => {
+      const raw = await readSecret(SECRET_NAMES.selfSite);
+      return raw ? (JSON.parse(raw) as SelfSite) : undefined;
+    },
   });
 }
 

@@ -37,8 +37,26 @@ export async function getOrCreateSecret(name: string, make: () => string | Promi
   return value;
 }
 
+/** Read a secret, or undefined when it has not been created. Never creates it. */
+export async function readSecret(name: string): Promise<string | undefined> {
+  const hit = cache.get(name);
+  if (hit) return hit;
+  if (process.env.SECRETS_LOCAL === "1") return local.get(name);
+  ssm ??= new SSMClient({});
+  try {
+    const v = (await ssm.send(new GetParameterCommand({ Name: name, WithDecryption: true }))).Parameter?.Value;
+    if (v) cache.set(name, v);
+    return v;
+  } catch (e) {
+    if (e instanceof ParameterNotFound || (e as { name?: string }).name === "ParameterNotFound") return undefined;
+    throw e;
+  }
+}
+
 export const SECRET_NAMES = {
   signingKey: "/annotatie/auth/signing-jwk",
   cookieKeys: "/annotatie/auth/cookie-keys",
   vapid: "/annotatie/auth/vapid",
+  /** Annotatie's own site (the portal giving feedback on itself): { siteId, kid, privateKeyPem }. */
+  selfSite: "/annotatie/auth/self-site",
 } as const;

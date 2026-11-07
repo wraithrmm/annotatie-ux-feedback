@@ -6,6 +6,7 @@
   "dependencies": {
     "@annotatie/core": "*",
     "@annotatie/store": "*",
-    "@annotatie/api": "*"
+    "@annotatie/api": "*",
+    "@annotatie/sdk-server-node": "*"
   }
 }

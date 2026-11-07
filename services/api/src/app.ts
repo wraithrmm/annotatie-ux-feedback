@@ -14,6 +14,14 @@ import {
 import type { JWTVerifyGetKey } from "jose";
 import { generateRegistrationOptions, verifyRegistrationResponse } from "@simplewebauthn/server";
 import type { CaptureStore } from "./captures.js";
+import { exchange as sdkExchange, signAssertion, type TokenResponse } from "@annotatie/sdk-server-node";
+
+/** Annotatie's own site: the portal hosts the widget, so its team can report on Annotatie itself. */
+export interface SelfSite {
+  siteId: string;
+  kid: string;
+  privateKeyPem: string;
+}
 
 export interface AppDeps {
   svc: Service;
@@ -22,6 +30,10 @@ export interface AppDeps {
   keys: JWTVerifyGetKey;
   vapidPublicKey: () => Promise<string>;
   buildSha: string;
+  /** Annotatie's own site, once `setup-self-site` has run; undefined until then. */
+  selfSite?: () => Promise<SelfSite | undefined>;
+  /** The RFC 7523 exchange (default: POST <base>/oauth/token, exactly as any host does). */
+  exchange?: (assertion: string) => Promise<TokenResponse>;
 }
 
 type Res = APIGatewayProxyStructuredResultV2;
@@ -54,6 +66,30 @@ export function createApp(deps: AppDeps) {
 
   // ---------------------------------------------------------------- portal
   on("GET", "/api/me", (_c, _p, p) => svc.me(person(p)));
+  // The portal as a host site: it vouches for its signed-in person exactly as any host's server does
+  // (signed assertion → token exchange). Only members of Annotatie's own site get a token; everyone
+  // else gets 404 and the portal never loads the widget.
+  on("GET", "/api/self/widget-token", async (_c, _p, p) => {
+    const me = person(p);
+    const self = await deps.selfSite?.();
+    if (!self) throw new HttpError(404, "not_found");
+    await svc.access(me, self.siteId, "viewer");
+    const user = await svc.getUser(me.userId);
+    if (!user) throw new HttpError(404, "not_found");
+    const assertion = signAssertion({
+      siteId: self.siteId,
+      kid: self.kid,
+      privateKey: self.privateKeyPem,
+      user: { id: me.userId, name: user.name, ...(user.email ? { email: user.email } : {}) },
+      base: deps.baseUrl,
+    });
+    const exchange = deps.exchange ?? ((a: string) => sdkExchange({ assertion: a, base: deps.baseUrl }));
+    const t = await exchange(assertion).catch((e) => {
+      console.error(JSON.stringify({ msg: "self widget token refused", error: String(e) }));
+      throw new HttpError(502, "token_unavailable", "The feedback widget is unavailable right now.");
+    });
+    return { siteId: self.siteId, access_token: t.access_token, expires_in: t.expires_in };
+  });
   on("PUT", "/api/me/preferences", (c, _p, p) => svc.setPreferences(person(p), c.body));
   on("GET", "/api/attention", (_c, _p, p) => svc.attention(person(p)));
   on("GET", "/api/decisions", (c, _p, p) => svc.decisions(person(p), { site: c.query.site, status: c.query.status }).then((decisions) => ({ decisions })));

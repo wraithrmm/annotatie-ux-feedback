@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
 import { Api, ApiError, classify, referenceFrom } from "../src/api.js";
-import { REFRESH_EARLY_MS, SignInEnded, TokenSource } from "../src/token.js";
+import { Offline, REFRESH_EARLY_MS, SignInEnded, TokenSource } from "../src/token.js";
 
 function clock() {
   let now = 1_000_000;
@@ -39,6 +39,35 @@ function tokenEndpoint(responses: Array<number | { token: string; expires: numbe
   }) as unknown as typeof globalThis.fetch;
   return { fetch, calls };
 }
+
+describe("TokenSource with a host getToken (bearer-session hosts)", () => {
+  it("uses getToken instead of the URL, caches, and refreshes through it", async () => {
+    const c = clock();
+    let n = 0;
+    const fetch = (async () => {
+      throw new Error("the URL must not be fetched");
+    }) as unknown as typeof globalThis.fetch;
+    const ts = new TokenSource({ url: "/annotatie/token", fetch, getToken: async () => ({ access_token: `g${++n}`, expires_in: 300 }), ...c });
+    expect(await ts.get()).toBe("g1");
+    expect(await ts.get()).toBe("g1");
+    await c.advance(300_000 - REFRESH_EARLY_MS);
+    expect(await ts.get()).toBe("g2");
+  });
+
+  it("null means not permitted (SignInEnded); a throw means offline", async () => {
+    const c = clock();
+    await expect(new TokenSource({ url: "/x", getToken: async () => null, ...c }).get()).rejects.toBeInstanceOf(SignInEnded);
+    await expect(
+      new TokenSource({ url: "/x", getToken: async () => Promise.reject(new Error("down")), ...c }).get(),
+    ).rejects.toBeInstanceOf(Offline);
+  });
+
+  it("rejects a malformed host token", async () => {
+    const c = clock();
+    const ts = new TokenSource({ url: "/x", getToken: async () => ({ access_token: "a", expires_in: 0 }), ...c });
+    await expect(ts.get()).rejects.toThrow(/unexpected/);
+  });
+});
 
 describe("TokenSource", () => {
   it("fetches with the host's cookies, caches, and schedules a refresh 60 s before expiry", async () => {
