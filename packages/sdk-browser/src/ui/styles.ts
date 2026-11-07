@@ -7,9 +7,10 @@ export const STYLES = String.raw`
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 .rw { color: var(--ann-text); font-family: var(--ann-font-sans); font-size: 14px; line-height: 20px; -webkit-font-smoothing: antialiased; text-align: start; }
-.rw p, .rw ul, .rw ol, .rw dl, .rw dd, .rw figure, .rw fieldset, .rw h1, .rw h2, .rw h3 { margin: 0; }
-.rw fieldset { border: 0; padding: 0; min-width: 0; }
-.rw button, .rw input, .rw select, .rw textarea { font: inherit; color: inherit; letter-spacing: inherit; }
+:where(.rw) :where(p, ul, ol, dl, dd, figure, fieldset, h1, h2, h3) { margin: 0; }
+:where(.rw) :where(fieldset) { border: 0; padding: 0; min-width: 0; }
+/* Zero specificity, so .btn--primary and every other component rule wins over the reset. */
+:where(.rw) :where(button, input, select, textarea) { font: inherit; color: inherit; letter-spacing: inherit; }
 .rw a { color: var(--ann-link); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
 .rw a:hover { text-decoration-thickness: 2px; }
 .sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }

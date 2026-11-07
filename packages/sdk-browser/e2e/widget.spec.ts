@@ -95,8 +95,12 @@ test("report a part with its capture, see the pin, open the thread and reply", a
   expect(html).not.toMatch(/onsubmit=/i);
   expect(html).not.toContain('data-rw="annotatie"');
 
+  // Primary buttons keep their own colours whatever the host page sets (the element reset never wins).
+  const close = panel.getByRole("button", { name: "Close" }).last();
+  await expect(close).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(close).toHaveCSS("font-weight", "500");
   // Close: report mode stays on, the new pin is on the page.
-  await panel.getByRole("button", { name: "Close" }).last().click();
+  await close.click();
   await expect(panel).toBeHidden();
   await expect(modeBar).toBeVisible();
   const pin = page.getByRole("button", { name: `Report ${number}, Open, Question, about button “Export this list”` });
