@@ -67,7 +67,7 @@ or code fields.
 
 ### 4.2 Attention: the queue (F4, F5, F6, F7)
 
-- **Filter chips that wrap** replace the tabs: All · To approve 3 · Decisions 1 · New from users 1 ·
+- **Filter chips that wrap** replace the tabs: All · Approve 3 · Decisions 1 · New 1 ·
   Unanswered 0. Real radios, so one is always chosen. The default is All, newest first, and drafts first
   within it.
 - **Each draft card**, top to bottom:

@@ -68,6 +68,7 @@ code{background:var(--surface-2);padding:1px 5px;border-radius:4px;font-size:14p
 .chips input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
 .chips label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 .chips label:has(input:focus-visible){outline:3px solid var(--accent);outline-offset:2px}
+@media (max-width:639px){.chips{gap:6px;margin:8px 0 12px}.chips label{gap:4px;padding:6px 10px;font-size:14px;white-space:nowrap}.chips .count{min-width:20px;height:20px;padding:0 5px}}
 
 /* ---------- shell ---------- */
 .app{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:100vh}
