@@ -41,8 +41,13 @@ area there is not the bug.
   thing you need from them. No promises of dates. Never mention being an AI. It is signed by the reviewer. It
   waits as a draft for the reviewer, **unless the site has auto-approve on (`list_sites`), when it reaches the
   user at once**: then write only what you would send unchecked, and ask the reviewer when in doubt.
-- **Status:** `in_progress` while you fix; leave `answered` and `resolved` to the reviewer unless you were told
-  otherwise. "Fixed" means deployed where the user can see it.
+- **Status:** `in_progress` while you fix. When the reply tells the user the problem is fixed (deployed where
+  they can see it) or their question is fully answered, post it with **`resolves: true`**: the report becomes
+  `resolved` when the reply is published (at once with auto-approve, otherwise when the reviewer approves it).
+  End that reply by telling them they can close the report if it's sorted for them, or reply if it isn't.
+  Never set `closed`: closing is the reporter's confirmation (from the widget), or the team's call. A reply that
+  only asks a question or says work is under way doesn't resolve. "Fixed" means deployed where the user can
+  see it.
 
 ## 5. Report back
 

@@ -1,7 +1,7 @@
 {
   "name": "annotatie",
   "displayName": "Annotatie",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Read and answer site users' reports, ask the reviewer questions through Annotatie instead of the chat, and run the liaison loop that hands answers back to waiting agents.",
   "author": { "name": "ConsultEasy" },
   "homepage": "https://annotatie.consulteasy.co.uk",

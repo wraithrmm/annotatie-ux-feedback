@@ -1,7 +1,7 @@
 // Reports (PT-2 §4.4) and Decisions (§4.5) lists.
 
 import { useState } from "preact/hooks";
-import type { Item, Site } from "@annotatie/core";
+import { isDone, type Item, type Site } from "@annotatie/core";
 import { ago, itemRef, itemType, STATUS_CLASS, STATUS_LABEL } from "../format";
 import { go, href } from "../router";
 import { useLoad, useStore } from "../store";
@@ -22,7 +22,7 @@ export function ReportsScreen(props: { siteId?: string }) {
   const q = useLoad(() => (me ? itemsAcross(api, chosen, "report") : Promise.resolve([] as Item[])), [me?.sites.map((s) => s.id).join(), props.siteId]);
   const all = q.data ?? [];
   const pick = (f: RFilter) =>
-    all.filter((it) => (f === "all" ? true : f === "resolved" ? it.status === "resolved" : f === "approval" ? it.counts.drafts > 0 : it.status !== "resolved"));
+    all.filter((it) => (f === "all" ? true : f === "resolved" ? isDone(it.status) : f === "approval" ? it.counts.drafts > 0 : !isDone(it.status)));
   const shown = pick(filter);
   const siteName = (id: string) => sites.find((s) => s.id === id)?.name ?? "";
   const waiting = pick("approval").length;
@@ -46,7 +46,7 @@ export function ReportsScreen(props: { siteId?: string }) {
             [
               ["active", "Open and active"],
               ["approval", "Waiting for approval"],
-              ["resolved", "Resolved"],
+              ["resolved", "Resolved or closed"],
               ["all", "All"],
             ] as Array<[RFilter, string]>
           ).map(([v, l]) => (

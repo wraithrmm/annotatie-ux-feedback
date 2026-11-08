@@ -209,6 +209,10 @@ export function createApp(deps: AppDeps) {
     const w = widget(p);
     return svc.postMessage(w, w.siteId, i!, { body: c.body.body });
   });
+  on("POST", "/api/w/items/{i}/close", (_c, [i], p) => {
+    const w = widget(p);
+    return svc.closeReport(w, i!);
+  });
   on("GET", "/api/w/items/{i}/capture/{f}", (_c, [i, f], p) => {
     const w = widget(p);
     return captureView(w, w.siteId, i!, f!);

@@ -224,7 +224,10 @@ GSI1 is **site + status + updated** (board columns, MCP "open items"). GSI2 is *
   Can be internal (for Richard) or client-visible (for the client to choose).
 
 **Statuses** are a small, fixed set shared by every kind — Open, Answered, In progress, Waiting on us,
-Waiting on client, Resolved — matching RW-1's tones. Labels are free text per site for anything else.
+Waiting on client, Resolved, Closed — matching RW-1's tones. Resolved is the team saying it's fixed or
+answered (an agent's reply marks it so when published, `resolves: true`); Closed is the person who reported it
+agreeing, from the widget (the team can close too). A reply from the user on either opens it again. Labels are
+free text per site for anything else.
 
 ## 7. The board (for us)
 

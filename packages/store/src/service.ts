@@ -18,6 +18,7 @@ import {
   type ItemKind,
   type ItemStatus,
   ITEM_STATUSES,
+  isDone,
   LIMITS,
   type LogEvent,
   type Member,
@@ -711,12 +712,16 @@ export class Service {
 
   async updateItem(p: PersonPrincipal | AgentPrincipal, siteId: string, itemId: string, body: { status?: unknown; title?: unknown; labels?: unknown }): Promise<Item> {
     await this.access(p, siteId, "member", "status");
-    await this.getItemRec(siteId, itemId);
+    const item = (await this.getItemRec(siteId, itemId)) as ItemRec & { resolvedAt?: string };
     const set: Record<string, unknown> = {};
     if (body.status !== undefined) {
       if (!ITEM_STATUSES.includes(body.status as ItemStatus)) throw new HttpError(400, "invalid_request", `status must be one of ${ITEM_STATUSES.join(", ")}.`);
       set.status = body.status;
       if (body.status === "resolved") set.resolvedAt = this.now().toISOString();
+      if (body.status === "closed") {
+        set.closedAt = this.now().toISOString();
+        if (!item.resolvedAt) set.resolvedAt = set.closedAt;
+      }
     }
     if (body.title !== undefined) set.title = reqStr(body.title, "title", LIMITS.title);
     if (body.labels !== undefined) {
@@ -730,9 +735,34 @@ export class Service {
     return teamItem(strip<ItemRec>(r)!);
   }
 
+  /**
+   * The person who sent a report agrees it is sorted: resolved → closed, from the widget. Only their own
+   * report, and only once the team has marked it resolved. Replying instead reopens it (postMessage).
+   */
+  async closeReport(p: WidgetPrincipal, itemId: string): Promise<Item> {
+    await this.access(p, p.siteId, "viewer");
+    const item = await this.getItemRec(p.siteId, itemId);
+    if (item.kind !== "report" || item.reporter?.kind !== "user" || item.reporter.id !== p.userId) throw new HttpError(404, "not_found");
+    if (item.status === "closed") return widgetItem(item);
+    const at = this.now().toISOString();
+    let r: ItemRec & Rec;
+    try {
+      r = await this.db.update<ItemRec & Rec>(`SITE#${p.siteId}`, `ITEM#${itemId}`, { status: "closed", closedAt: at, updatedAt: at }, {
+        condition: "#st = :res",
+        names: { "#st": "status" },
+        values: { ":res": "resolved" },
+      });
+    } catch (e) {
+      if (isConditionFailure(e)) throw new HttpError(409, "not_resolved", "Only a resolved report can be closed.");
+      throw e;
+    }
+    await this.log(p.siteId, "item.updated", p, { itemId, detail: { status: "closed", by: "reporter" } });
+    return widgetItem(strip<ItemRec>(r)!);
+  }
+
   // ------------------------------------------------------------------ messages and the gate
 
-  async postMessage(p: Principal, siteId: string, itemId: string, body: { body?: unknown; visibility?: unknown }): Promise<Message> {
+  async postMessage(p: Principal, siteId: string, itemId: string, body: { body?: unknown; visibility?: unknown; resolves?: unknown }): Promise<Message> {
     const visibility: Visibility = p.kind === "widget" ? "user" : (body.visibility as Visibility);
     if (visibility !== "user" && visibility !== "internal") throw new HttpError(400, "invalid_request", "visibility must be internal or user.");
     const scope: AgentScope = visibility === "user" ? "reply:user" : "reply";
@@ -743,6 +773,9 @@ export class Service {
       throw new HttpError(400, "invalid_request", "Only reports have site users to reply to; use an internal note.");
     }
     const text = reqStr(body.body, "body", LIMITS.body);
+    if (body.resolves !== undefined && typeof body.resolves !== "boolean") throw new HttpError(400, "invalid_request", "resolves must be true or false.");
+    const resolves = p.kind !== "widget" && visibility === "user" && body.resolves === true;
+    if (resolves) await this.access(p, siteId, "member", "status");
     const now = this.now();
     const decided = decideMessageState({
       principal: p.kind,
@@ -764,6 +797,7 @@ export class Service {
       ...(decided.state === "published" ? { publishedAt: at } : {}),
       ...(decided.releaseAt ? { releaseAt: decided.releaseAt } : {}),
       ...(decided.autoApproved ? { autoApproved: true } : {}),
+      ...(resolves ? { resolves: true } : {}),
       via: this.via(p),
     };
     await this.db.put({ pk: `ITEM#${itemId}`, sk: `MSG#${msg.id}`, ...msg });
@@ -774,7 +808,8 @@ export class Service {
       if (item.status !== "in_progress") set.status = "waiting_on_us";
     } else if (visibility === "user" && decided.state === "published") {
       set.lastTeamReplyAt = at;
-      if (["open", "waiting_on_us"].includes(item.status)) set.status = "answered";
+      if (resolves) Object.assign(set, { status: "resolved", resolvedAt: at });
+      else if (["open", "waiting_on_us"].includes(item.status)) set.status = "answered";
     }
     await this.bumpItem(siteId, itemId, set, {
       messages: 1,
@@ -784,7 +819,7 @@ export class Service {
     await this.log(siteId, "message.created", p, {
       itemId,
       messageId: msg.id,
-      detail: { visibility, state: msg.state, ...(msg.autoApproved ? { autoApproved: true } : {}) },
+      detail: { visibility, state: msg.state, ...(msg.autoApproved ? { autoApproved: true } : {}), ...(resolves ? { resolves: true } : {}) },
     });
     if (msg.state === "draft") {
       await this.notify({ type: "draft", site, item: teamItem({ ...item, ...set } as ItemRec), blocking: false });
@@ -862,7 +897,11 @@ export class Service {
       throw e;
     }
     const itemSet: Record<string, unknown> = { updatedAt: at, lastTeamReplyAt: at };
-    if (["open", "waiting_on_us"].includes(item.status)) itemSet.status = "answered";
+    if (msg.resolves) {
+      Object.assign(itemSet, { status: "resolved", resolvedAt: at });
+      // Undo within the 10 seconds puts the report back where it was.
+      await this.db.update(`ITEM#${itemId}`, `MSG#${messageId}`, { resolvedFrom: item.status });
+    } else if (["open", "waiting_on_us"].includes(item.status)) itemSet.status = "answered";
     await this.bumpItem(siteId, itemId, itemSet, { drafts: -1, visible: 1 });
     await this.log(siteId, "message.published", person, { itemId, messageId, detail: { edited: edited !== undefined && edited !== msg.body } });
     return updated;
@@ -900,7 +939,14 @@ export class Service {
       if (isConditionFailure(e)) throw new HttpError(409, "too_late", "It has already been sent.");
       throw e;
     }
-    await this.bumpItem(siteId, itemId, { updatedAt: nowIso }, { drafts: 1, visible: -1 });
+    const back = (m as Message & { resolvedFrom?: ItemStatus }).resolvedFrom;
+    const undoSet: Record<string, unknown> = { updatedAt: nowIso };
+    if (back) {
+      const cur = await this.getItemRec(siteId, itemId);
+      if (cur.status === "resolved") undoSet.status = back;
+      await this.db.update(`ITEM#${itemId}`, `MSG#${messageId}`, { resolvedFrom: undefined });
+    }
+    await this.bumpItem(siteId, itemId, undoSet, { drafts: 1, visible: -1 });
     await this.log(siteId, "message.unpublished", person, { itemId, messageId });
     return updated;
   }
@@ -993,7 +1039,7 @@ export class Service {
         const item = teamItem(i);
         if (i.decision?.status === "waiting") out.decisions.push({ site, item });
         const waitingOnUs =
-          i.kind === "report" && i.status !== "resolved" && !!i.lastUserMessageAt && (!i.lastTeamReplyAt || i.lastUserMessageAt > i.lastTeamReplyAt);
+          i.kind === "report" && !isDone(i.status) && !!i.lastUserMessageAt && (!i.lastTeamReplyAt || i.lastUserMessageAt > i.lastTeamReplyAt);
         if (i.counts.drafts <= 0 && !waitingOnUs) continue;
         const msgs = (await this.db.query<Message & Rec>(`ITEM#${i.id}`, { prefix: "MSG#" })).map((r) => strip<Message>(r)!);
         for (const m of msgs) if (m.state === "draft") out.drafts.push({ site, item, message: m });
@@ -1252,7 +1298,7 @@ export class Service {
       const site = await this.siteRec(siteId);
       if (!site) continue;
       for (const i of (await this.siteItems(siteId)) as Array<ItemRec & { resolvedAt?: string }>) {
-        if (i.status !== "resolved" || !i.resolvedAt || !i.capture || i.capture.files === undefined) continue;
+        if (!isDone(i.status) || !i.resolvedAt || !i.capture || i.capture.files === undefined) continue;
         if ((i.capture as Capture & { purged?: boolean }).purged) continue;
         if (Date.parse(i.resolvedAt) + site.retentionDays * 86400_000 < now) out.push({ siteId, itemId: i.id });
       }
@@ -1277,10 +1323,10 @@ function countsOf(items: ItemRec[]): SiteCounts {
   let decisions = 0;
   let unanswered = 0;
   for (const i of items) {
-    if (i.status !== "resolved") open++;
+    if (!isDone(i.status)) open++;
     drafts += i.counts.drafts;
     if (i.decision?.status === "waiting") decisions++;
-    if (i.kind === "report" && i.status !== "resolved" && !i.lastTeamReplyAt) unanswered++;
+    if (i.kind === "report" && !isDone(i.status) && !i.lastTeamReplyAt) unanswered++;
   }
   return { open, drafts, decisions, unanswered };
 }

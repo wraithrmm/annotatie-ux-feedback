@@ -205,3 +205,30 @@ test("without a token from the host, nothing is drawn", async ({ page, context }
   await expect(page.locator('[data-rw="annotatie"]')).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Report/ })).toHaveCount(0);
 });
+
+test("the team resolves a report; the person who sent it closes it", async ({ page, request }) => {
+  const report = await openWidget(page);
+  await report.click();
+  const modeBar = page.getByRole("region", { name: "Report mode" });
+  await modeBar.getByRole("button", { name: /^Reports/ }).click();
+  const list = page.getByRole("dialog", { name: "Reports" });
+  await list.getByRole("button", { name: "Comment on the whole page" }).click();
+  const panel = page.getByRole("dialog", { name: "New report" });
+  await panel.getByLabel("Comment").fill("The filters take a fifth of the screen.");
+  await panel.getByRole("button", { name: "Send report" }).click();
+  await expect(panel.getByText(/^Report \d+ sent$/)).toBeVisible();
+  await panel.getByRole("button", { name: "Close" }).last().click();
+
+  const [item] = (await state(request)).items;
+  await request.post(`${API}/__test/team-reply`, { data: { itemId: item!.id, body: "The filters are smaller now.", resolves: true } });
+
+  await modeBar.getByRole("button", { name: /^Reports/ }).click();
+  await list.getByRole("button", { name: new RegExp(`Report ${item!.number}`) }).click();
+  const thread = page.getByRole("dialog", { name: `Report ${item!.number}` });
+  await expect(thread.getByText(/^Resolved on .*If it is sorted for you, close the report\. If not, reply and it opens again\.$/)).toBeVisible();
+  await thread.getByRole("button", { name: "It’s sorted: close the report" }).click();
+  await expect(thread.getByText(`Report ${item!.number} closed`)).toBeVisible();
+  await expect(thread.getByRole("button", { name: "It’s sorted: close the report" })).toHaveCount(0);
+  await expect(thread.getByText(/^Closed on /)).toBeVisible();
+  expect((await state(request)).items[0]!.status).toBe("closed");
+});

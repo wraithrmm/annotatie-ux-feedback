@@ -40,7 +40,7 @@ Discovery: `BASE/.well-known/oauth-authorization-server`, `BASE/.well-known/open
 | `POST /api/sites/{s}/items` | `{ kind: "conversation" \| "decision", title, body?, decision?: { question, context?, options, recommendation?, blocking } }` → `Item` | member+ |
 | `GET /api/sites/{s}/items/{i}` | → `{ item: Item, messages: Message[] (every visibility and state, oldest first), log: LogEvent[] }` | viewer+ |
 | `PATCH /api/sites/{s}/items/{i}` | `{ status?, title?, labels? }` → `Item` | member+ |
-| `POST /api/sites/{s}/items/{i}/messages` | `{ body, visibility }` → `Message` (a person's message is published at once) | member+ |
+| `POST /api/sites/{s}/items/{i}/messages` | `{ body, visibility, resolves? }` → `Message` (a person's message is published at once). `resolves: true` on a `user` reply marks the report `resolved` when the reply is published (at once, or on approval; undo puts the status back); needs the `status` scope for agents | member+ |
 | `POST /api/sites/{s}/items/{i}/messages/{m}/approve` | `{ body? }` (edited text) → `Message` with `state=published`, `releaseAt = now + 10 s` (M2) | member+ |
 | `POST /api/sites/{s}/items/{i}/messages/{m}/undo` | → `Message` back to `draft`; `409 too_late` after `releaseAt` | member+ |
 | `POST /api/sites/{s}/items/{i}/messages/{m}/reject` | `{ reason }` → `Message` with `state=rejected` (kept as an internal note the agent reads) | member+ |
@@ -77,7 +77,8 @@ its `releaseAt`.
 | `POST /api/w/items` | `{ title?, body, page: PageRef, anchor?, capture: { context, part?, files: { page?: { size }, pageMarked?: { size }, closeup?: { size }, html?: { size } } } }` → `{ item: Item, uploads: { [file]: { url, fields } } }` (S3 presigned POST policies, 10 min; send `fields` + `file` as multipart form data; `html` is gzipped HTML, `Content-Type: text/html`, `Content-Encoding: gzip`) |
 | `POST /api/w/items/{i}/capture` | `{ files: { [file]: { size, sha256 } } }` → `Item` (with `capture.confirmed = true`) |
 | `GET /api/w/items/{i}` | → `{ item: Item, messages: Message[] }` (user-visible, published, released only) |
-| `POST /api/w/items/{i}/messages` | `{ body }` (≤ 5,000 characters) → `Message` |
+| `POST /api/w/items/{i}/messages` | `{ body }` (≤ 5,000 characters) → `Message` (on a resolved or closed report, it opens again) |
+| `POST /api/w/items/{i}/close` | → `Item` with `status=closed`. The reporter confirms a `resolved` report is sorted; only their own report; `409 not_resolved` otherwise |
 | `GET /api/w/items/{i}/capture/{file}` | as the portal route (C5: every site user sees captures) |
 
 Item fields a widget never receives: `log`, `via`, `decision` of internal items, `counts.drafts`.

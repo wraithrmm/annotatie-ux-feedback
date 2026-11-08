@@ -171,6 +171,14 @@ describe("portal and widget over HTTP", () => {
     expect(reply.status).toBe(201);
     expect(reply.body.via).toBeUndefined();
 
+    // the reporter closes once the team marks it resolved; nobody else can
+    expect((await call("POST", `/api/w/items/${itemId}/close`, { token: wt, origin: SHOP })).status).toBe(409);
+    await call("PATCH", `/api/sites/${site.id}/items/${itemId}`, { token: tok, body: { status: "resolved" } });
+    expect((await call("POST", `/api/w/items/${itemId}/close`, { token: await widgetTok(site.id, "host-2"), origin: SHOP })).status).toBe(404);
+    const closed = await call("POST", `/api/w/items/${itemId}/close`, { token: wt, origin: SHOP });
+    expect(closed.status).toBe(200);
+    expect(closed.body.status).toBe("closed");
+
     const other = (await call("POST", "/api/sites", { token: tok, body: { name: "Other", origins: [SHOP] } })).body;
     expect((await call("GET", `/api/w/items/${itemId}`, { token: await widgetTok(other.id), origin: SHOP })).status).toBe(404);
   });

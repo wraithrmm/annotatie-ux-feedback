@@ -9,7 +9,8 @@ export type ItemStatus =
   | "in_progress"
   | "waiting_on_us"
   | "waiting_on_user"
-  | "resolved";
+  | "resolved"
+  | "closed";
 export type Visibility = "internal" | "user";
 export type MessageState = "draft" | "published" | "rejected";
 
@@ -20,7 +21,15 @@ export const ITEM_STATUSES: readonly ItemStatus[] = [
   "waiting_on_us",
   "waiting_on_user",
   "resolved",
+  "closed",
 ];
+
+/**
+ * "resolved": the team says it is fixed or answered. "closed": the person who reported it agrees (they
+ * close it from the widget), or the team closes it. Both count as done; a reply from the user reopens it.
+ */
+export const DONE_STATUSES: readonly ItemStatus[] = ["resolved", "closed"];
+export const isDone = (s: ItemStatus | string): boolean => s === "resolved" || s === "closed";
 
 /** Agent scopes (consent screen and personal access tokens). There is deliberately no publish scope. */
 /** "sites": create sites, allow their origins and register their site keys (installing the widget). */
@@ -213,6 +222,8 @@ export interface Message {
   releaseAt?: string;
   approvedBy?: Person;
   autoApproved?: boolean;
+  /** Team replies only: when this reply is published (at once or on approval), its report becomes resolved. */
+  resolves?: boolean;
   rejectedReason?: string;
   rejectedBy?: Person;
   /** Portal and agents only. */

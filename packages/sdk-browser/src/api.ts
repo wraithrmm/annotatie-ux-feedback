@@ -145,6 +145,10 @@ export class Api {
   item(itemId: string): Promise<{ item: Item; messages: Message[] }> {
     return this.json("GET", `/api/w/items/${encodeURIComponent(itemId)}`);
   }
+  /** The reporter confirms a resolved report is sorted: resolved → closed. */
+  closeReport(itemId: string): Promise<Item> {
+    return this.json("POST", `/api/w/items/${encodeURIComponent(itemId)}/close`);
+  }
   reply(itemId: string, body: string): Promise<Message> {
     return this.json("POST", `/api/w/items/${encodeURIComponent(itemId)}/messages`, { body });
   }

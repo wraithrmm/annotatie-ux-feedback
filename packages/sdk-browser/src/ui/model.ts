@@ -4,7 +4,7 @@ import type { Item, ItemStatus } from "@annotatie/core";
 import { esc } from "../format.js";
 import { mi } from "./icons.js";
 
-export type Tone = "open" | "answered" | "progress" | "resolved";
+export type Tone = "open" | "answered" | "progress" | "resolved" | "closed";
 export const TYPES = ["Bug", "Feature", "Question"] as const;
 export type ReportType = (typeof TYPES)[number];
 
@@ -13,9 +13,10 @@ export const STATUS: Record<Tone, { word: string; tone: "neutral" | "info" | "su
   answered: { word: "Answered", tone: "info", icon: "chat" },
   progress: { word: "In progress", tone: "neutral", icon: "clock" },
   resolved: { word: "Resolved", tone: "success", icon: "check" },
+  closed: { word: "Closed", tone: "success", icon: "check" },
 };
 
-/** The API's six statuses on RW-1's four: "waiting on user" reads as Answered, "waiting on us" as Open. */
+/** The API's seven statuses on RW-1's tones: "waiting on user" reads as Answered, "waiting on us" as Open. */
 export function toneOf(status: ItemStatus): Tone {
   switch (status) {
     case "answered":
@@ -25,6 +26,8 @@ export function toneOf(status: ItemStatus): Tone {
       return "progress";
     case "resolved":
       return "resolved";
+    case "closed":
+      return "closed";
     default:
       return "open";
   }
@@ -52,7 +55,8 @@ export function splitTitle(title: string): { type?: ReportType; text: string } {
   return { type: m[1] as ReportType, text: title.slice(m[0].length) };
 }
 
-export const isResolved = (i: Item) => i.status === "resolved";
+/** Resolved or closed: done, so its pin is hidden unless Show resolved pins is ticked. */
+export const isResolved = (i: Item) => i.status === "resolved" || i.status === "closed";
 
 export const pageName = (i: Item, fallback = "this page"): string => i.page?.title?.trim() || i.page?.path || fallback;
 

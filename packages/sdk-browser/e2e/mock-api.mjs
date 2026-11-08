@@ -108,11 +108,11 @@ const server = createServer(async (req, res) => {
       return json(res, 200, { ok: true });
     }
     if (url.pathname === "/__test/team-reply" && req.method === "POST") {
-      const { itemId, body } = JSON.parse((await readBody(req)).toString());
+      const { itemId, body, resolves } = JSON.parse((await readBody(req)).toString());
       const item = state.items.find((i) => i.id === itemId);
       const now = new Date().toISOString();
       state.messages.push({ id: randomUUID(), itemId, siteId: SITE, author: { kind: "team", id: "t1", name: "Sam Okafor" }, body, visibility: "user", state: "published", createdAt: now, publishedAt: now, releaseAt: now });
-      item.status = "answered";
+      item.status = resolves ? "resolved" : "answered";
       item.updatedAt = now;
       return json(res, 200, { ok: true });
     }
@@ -203,9 +203,16 @@ const server = createServer(async (req, res) => {
       const now = new Date().toISOString();
       const m = { id: randomUUID(), itemId: id, siteId: SITE, author: { kind: "user", id: who.sub, name: who.name }, body, visibility: "user", state: "published", createdAt: now, publishedAt: now };
       state.messages.push(m);
-      if (item.status === "answered" && item.reporter.id === who.sub) item.status = "open";
+      if (["answered", "resolved", "closed"].includes(item.status) && item.reporter.id === who.sub) item.status = "open";
       item.updatedAt = now;
       return json(res, 201, m);
+    }
+    if (req.method === "POST" && parts[4] === "close" && parts.length === 5) {
+      if (item.reporter.id !== who.sub) return err(res, 404, "not_found");
+      if (item.status !== "resolved" && item.status !== "closed") return err(res, 409, "not_resolved");
+      item.status = "closed";
+      item.updatedAt = new Date().toISOString();
+      return json(res, 200, item);
     }
     if (req.method === "POST" && parts[4] === "capture" && parts.length === 5) {
       const { files } = JSON.parse((await readBody(req)).toString());

@@ -86,8 +86,8 @@ export const STYLES = String.raw`
 .rw-pin:hover { background: var(--ann-surface-hover); }
 .rw-pin.st-answered { border-color: var(--ann-info-border); color: var(--ann-info-text); }
 .rw-pin.st-answered .i { color: var(--ann-info-icon); }
-.rw-pin.st-resolved { border-style: dashed; border-color: var(--ann-success-border); color: var(--ann-success-text); }
-.rw-pin.st-resolved .i { color: var(--ann-success-icon); }
+.rw-pin.st-resolved, .rw-pin.st-closed { border-style: dashed; border-color: var(--ann-success-border); color: var(--ann-success-text); }
+.rw-pin.st-resolved .i, .rw-pin.st-closed .i { color: var(--ann-success-icon); }
 .rw-pin.is-shown { box-shadow: 0 0 0 3px var(--ann-selection-bar); }
 .rw-pin::before { content: ""; position: absolute; inset: -2px; }
 
