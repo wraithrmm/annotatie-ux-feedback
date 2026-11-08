@@ -206,7 +206,7 @@ export function createMock(origin: string) {
     return {
       ...s,
       counts: {
-        open: its.filter((x) => x.kind === "report" && x.status !== "resolved").length,
+        open: its.filter((x) => x.kind === "report" && x.status !== "resolved" && x.status !== "closed").length,
         drafts: att.drafts.filter((d) => d.site.id === s.id).length,
         decisions: att.decisions.filter((d) => d.site.id === s.id).length,
         unanswered: att.unanswered.filter((d) => d.site.id === s.id).length + att.newFromUsers.filter((d) => d.site.id === s.id).length,
@@ -222,7 +222,7 @@ export function createMock(origin: string) {
       const ms = st.messages.filter((m) => m.itemId === it.id);
       for (const m of ms) if (m.state === "draft" && m.visibility === "user") out.drafts.push({ site: pick(s), item: it, message: m });
       if (it.kind === "decision" && it.decision?.status === "waiting") out.decisions.push({ site: pick(s), item: it });
-      if (it.kind !== "report" || it.status === "resolved" || it.counts.drafts > 0) continue;
+      if (it.kind !== "report" || it.status === "resolved" || it.status === "closed" || it.counts.drafts > 0) continue;
       const lastUser = [...ms].reverse().find((m) => m.author.kind === "user");
       if (!it.lastTeamReplyAt && lastUser) out.newFromUsers.push({ site: pick(s), item: it, message: lastUser });
       else if (it.lastTeamReplyAt && it.lastUserMessageAt && it.lastUserMessageAt > it.lastTeamReplyAt) out.unanswered.push({ site: pick(s), item: it });

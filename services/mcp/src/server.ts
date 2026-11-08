@@ -73,6 +73,7 @@ function messageView(m: Message) {
     visibility: m.visibility,
     state: m.state,
     ...(m.state === "draft" ? { waiting_for: "approval" } : {}),
+    ...(m.resolves ? { resolves: true } : {}),
     ...(m.state === "rejected" ? { rejected_reason: (m as Message & { rejectedReason?: string }).rejectedReason } : {}),
     body: m.author.kind === "user" ? untrusted(m.body, "site user") : m.body,
     createdAt: m.createdAt,
@@ -384,12 +385,18 @@ export function createMcpServer(p: AgentPrincipal, { svc, captures, baseUrl }: M
     "post_message",
     {
       description:
-        'Write on an item. visibility "internal" is a note for the team, published at once. visibility "user" is a reply the site user will see: it waits as a draft for a person to approve it, unless the site has auto-approve on. The result says which (state, waiting_for).',
-      inputSchema: { site, item, body: z.string().min(1).max(5000).describe("Markdown."), visibility: z.enum(["internal", "user"]) },
+        'Write on an item. visibility "internal" is a note for the team, published at once. visibility "user" is a reply the site user will see: it waits as a draft for a person to approve it, unless the site has auto-approve on. The result says which (state, waiting_for). Set resolves: true on a user reply that tells them the problem is fixed (deployed where they can see it) or their question fully answered: the report becomes resolved when the reply is published, and the person who reported it can then close it to confirm.',
+      inputSchema: {
+        site,
+        item,
+        body: z.string().min(1).max(5000).describe("Markdown."),
+        visibility: z.enum(["internal", "user"]),
+        resolves: z.boolean().optional().describe('visibility "user" only: mark the report resolved when this reply is published.'),
+      },
     },
     run(async (a) => {
       const id = await resolveItem(a.site, a.item);
-      const m = await svc.postMessage(p, a.site, id, { body: a.body, visibility: a.visibility });
+      const m = await svc.postMessage(p, a.site, id, { body: a.body, visibility: a.visibility, resolves: a.resolves });
       return json({ message: messageView(m), ...(m.state === "draft" ? { note: "Saved as a draft. A person must approve it before the site user sees it; get_changes reports when it is published or rejected." } : {}) });
     }),
   );
@@ -397,7 +404,8 @@ export function createMcpServer(p: AgentPrincipal, { svc, captures, baseUrl }: M
   server.registerTool(
     "set_status",
     {
-      description: "Change an item's status.",
+      description:
+        'Change an item\'s status. "resolved" means the team considers it fixed or answered; "closed" is normally set by the person who reported it, from the widget, to confirm. Prefer post_message with resolves: true over setting "resolved" separately, so the status changes when the user sees the reply.',
       inputSchema: { site, item, status: z.enum(ITEM_STATUSES as unknown as [string, ...string[]]) },
     },
     run(async (a) => json({ item: itemView(await svc.updateItem(p, a.site, await resolveItem(a.site, a.item), { status: a.status }), baseUrl) })),

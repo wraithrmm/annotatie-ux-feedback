@@ -249,3 +249,61 @@ describe("tokens, invites, keys", () => {
     expect(await svc.useRecoveryCode(u!.email, codes[0]!)).toBeUndefined();
   });
 });
+
+describe("resolved by the team, closed by the reporter", () => {
+  it("a reply with resolves: true marks the report resolved when it is published at once", async () => {
+    const { svc, owner, site, user, report } = await setup();
+    await svc.setAutoApprove(owner, site.id, { on: true });
+    const m = await svc.postMessage(agentOf(owner), site.id, report.id, { body: "Fixed and live", visibility: "user", resolves: true });
+    expect(m.state).toBe("published");
+    expect(m.resolves).toBe(true);
+    expect((await svc.getItem(user, site.id, report.id)).item.status).toBe("resolved");
+    expect((await svc.mySites(owner))[0]!.counts!.open).toBe(0);
+  });
+
+  it("a draft with resolves: true changes nothing until approved, and undo puts the status back", async () => {
+    let now = new Date("2026-11-06T12:00:00Z");
+    const { svc, owner, site, user, report } = await setup({ now: () => now });
+    await svc.updateItem(owner, site.id, report.id, { status: "in_progress" });
+    const draft = await svc.postMessage(agentOf(owner), site.id, report.id, { body: "Fixed", visibility: "user", resolves: true });
+    expect((await svc.getItem(owner, site.id, report.id)).item.status).toBe("in_progress");
+    await svc.approve(owner, site.id, report.id, draft.id);
+    expect((await svc.getItem(owner, site.id, report.id)).item.status).toBe("resolved");
+    now = new Date("2026-11-06T12:00:05Z");
+    await svc.undo(owner, site.id, report.id, draft.id);
+    expect((await svc.getItem(owner, site.id, report.id)).item.status).toBe("in_progress");
+    await svc.approve(owner, site.id, report.id, draft.id);
+    now = new Date("2026-11-06T12:00:20Z");
+    expect((await svc.getItem(user, site.id, report.id)).item.status).toBe("resolved");
+  });
+
+  it("resolves needs the status scope and is ignored on internal notes", async () => {
+    const { svc, owner, site, report } = await setup();
+    const noStatus = agentOf(owner, ["read", "reply", "reply:user"]);
+    expect(await code(svc.postMessage(noStatus, site.id, report.id, { body: "Fixed", visibility: "user", resolves: true }))).toBe("insufficient_scope");
+    const note = await svc.postMessage(agentOf(owner), site.id, report.id, { body: "Cause found", visibility: "internal", resolves: true });
+    expect(note.resolves).toBeUndefined();
+    expect((await svc.getItem(owner, site.id, report.id)).item.status).toBe("open");
+  });
+
+  it("only the reporter closes, only a resolved report, and a reply opens it again", async () => {
+    const { svc, owner, site, user, report } = await setup();
+    expect(await code(svc.closeReport(user, report.id))).toBe("not_resolved");
+    await svc.updateItem(owner, site.id, report.id, { status: "resolved" });
+    expect(await code(svc.closeReport(widgetUser(site.id, "someone-else", "Kim"), report.id))).toBe("not_found");
+    const closed = await svc.closeReport(user, report.id);
+    expect(closed.status).toBe("closed");
+    expect((await svc.closeReport(user, report.id)).status).toBe("closed");
+    const log = await svc.listLog(owner, site.id);
+    expect(log.some((e) => e.type === "item.updated" && e.detail?.status === "closed" && e.actor.kind === "user")).toBe(true);
+    await svc.postMessage(user, site.id, report.id, { body: "It broke again" });
+    expect((await svc.getItem(user, site.id, report.id)).item.status).toBe("waiting_on_us");
+  });
+
+  it("the team can close a report too", async () => {
+    const { svc, owner, site, report } = await setup();
+    const it2 = await svc.updateItem(owner, site.id, report.id, { status: "closed" });
+    expect(it2.status).toBe("closed");
+    expect((await svc.mySites(owner))[0]!.counts!.unanswered).toBe(0);
+  });
+});

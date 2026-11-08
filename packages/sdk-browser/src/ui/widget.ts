@@ -67,6 +67,8 @@ interface ThreadState {
   reply: string;
   sub: "" | "invalid" | "toolong" | "sent" | Failure;
   replyFailures: number;
+  /** The reporter's "it's sorted" button: idle, sending, done, or failed. */
+  closing?: "sending" | "closed" | "failed";
   reference?: string;
   reopened?: boolean;
   thumbUrl?: string;
@@ -971,6 +973,8 @@ export class Widget {
     if (t === "open") return "Open: not yet answered.";
     if (t === "answered") return mine || !i.reporter ? "Answered: a reply is waiting for you." : `Answered: a reply is waiting for ${i.reporter.name}.`;
     if (t === "progress") return "In progress: a fix is being made.";
+    if (t === "closed") return `Closed on ${dateTime(i.updatedAt)}. Its pin shows only when Show resolved pins is ticked.`;
+    if (mine) return `Resolved on ${dateTime(i.updatedAt)}. If it is sorted for you, close the report. If not, reply and it opens again.`;
     return `Resolved on ${dateTime(i.updatedAt)}. Its pin shows only when Show resolved pins is ticked.`;
   }
 
@@ -1012,6 +1016,13 @@ export class Widget {
       .join("");
     const ref = st.reference;
     let notice = "";
+    if (st.closing === "closed") notice = this.callout("success", `Report ${i.number} closed`, "Thank you for confirming. Its pin shows only when Show resolved pins is ticked.", "status");
+    else if (st.closing === "failed") notice = this.callout("danger", `Report ${i.number} was not closed`, "Something went wrong. Nothing has changed. Try again.", "alert");
+    const mine = !!this.me && i.reporter?.id === this.me.user.id;
+    const confirm =
+      mine && i.status === "resolved"
+        ? `<div class="acts"><button type="button" class="btn btn--outline" data-act="confirm-close">${st.closing === "sending" ? '<span class="spin" aria-hidden="true"></span>Closing…' : "It’s sorted: close the report"}</button></div>`
+        : "";
     if (st.sub === "sent") notice = this.callout("success", "Reply sent", st.reopened ? `Report ${i.number} is open again until it is answered.` : "", "status").replace("<p></p>", "");
     const replyFail: Partial<Record<string, [string, string]>> = {
       failed: ["Your reply was not sent", `Something went wrong on the server. Your reply is still here. Press Send reply to try again. ${ref ? `If it fails again, send reference ${ref} to the system team.` : "If it fails again, tell the system team."}`],
@@ -1033,11 +1044,32 @@ export class Widget {
       <div class="fly-hd"><div class="ht">${backBtn}<h2 id="rw-th" tabindex="-1">Report ${i.number}</h2>
         <p class="sub">${sub}</p><p>${statusTag(i.status)}</p></div>${close}</div>
       <div class="fly-bd">${notice}
-        <div class="facts"><p><b>${esc(this.statusSentence(i))}</b></p>${about}</div>${cap}
+        <div class="facts"><p><b>${esc(this.statusSentence(i))}</b></p>${confirm}${about}</div>${cap}
         <h3>Messages</h3><ol class="msgs">${msgs}</ol>${form}</div></div>`;
   }
 
   private replySending = false;
+
+  private async confirmClose(): Promise<void> {
+    const st = this.panel;
+    if (!st || st.kind !== "thread" || !st.item || st.closing === "sending") return;
+    st.closing = "sending";
+    this.renderOverlay();
+    this.focus('[data-act="confirm-close"]');
+    this.say("Closing the report.");
+    try {
+      await this.api.closeReport(st.id);
+      st.closing = "closed";
+      await this.loadThread(st, true);
+      this.renderOverlay();
+      this.focus("#rw-th");
+      this.say(`Report ${st.item!.number} closed.`);
+    } catch {
+      st.closing = "failed";
+      this.renderOverlay();
+      this.focus('[data-act="confirm-close"]');
+    }
+  }
 
   private async sendReply(): Promise<void> {
     const st = this.panel;
@@ -1080,7 +1112,8 @@ export class Widget {
       st.replyFailures = 0;
       st.sub = "sent";
       await this.loadThread(st, true);
-      st.reopened = before === "answered" && !!st.item && toneOf(st.item.status) === "open";
+      st.closing = undefined;
+      st.reopened = before !== "open" && before !== "progress" && !!st.item && toneOf(st.item.status) === "open";
       this.renderOverlay();
       this.focus("#rw-th");
       this.say(st.reopened ? `Reply sent. Report ${st.item!.number} is open again.` : "Reply sent.");
@@ -1490,6 +1523,9 @@ export class Widget {
         break;
       case "reply":
         void this.sendReply();
+        break;
+      case "confirm-close":
+        void this.confirmClose();
         break;
     }
   }

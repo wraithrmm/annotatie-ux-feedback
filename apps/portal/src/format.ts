@@ -41,6 +41,7 @@ export const STATUS_LABEL: Record<ItemStatus, string> = {
   waiting_on_us: "Waiting on us",
   waiting_on_user: "Waiting on user",
   resolved: "Resolved",
+  closed: "Closed",
 };
 
 export const STATUS_CLASS: Record<ItemStatus, string> = {
@@ -50,6 +51,7 @@ export const STATUS_CLASS: Record<ItemStatus, string> = {
   waiting_on_us: "t-progress",
   waiting_on_user: "t-answered",
   resolved: "t-resolved",
+  closed: "t-resolved",
 };
 
 /** "Report 41" or "Q-3". */
