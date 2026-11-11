@@ -1,6 +1,7 @@
 {
   "name": "@annotatie/sdk-browser",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "description": "The Annotatie widget: report mode, pins, threads and the page capture, in a closed Shadow DOM. No runtime dependencies.",
   "main": "src/index.ts",

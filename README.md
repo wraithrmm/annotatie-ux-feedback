@@ -96,3 +96,12 @@ git remote add origin git@github.com:<owner>/annotatie.git && git push -u origin
 
 Leave it running for a week, then check Cost Explorer filtered by the tag `project = annotatie`. The
 expected total is **≈ $0.00–$0.05**. The budget alert fires at $2.50 actual and at $5 forecast.
+
+## License
+
+Copyright (c) 2026 ConsultEZ. Released under the [MIT License](LICENSE).
+
+You are free to use, copy, modify, fork, self-host and redistribute this code,
+including commercially, as long as the copyright and licence notice stay with
+it. ConsultEZ maintains this repository and decides what goes into it; forks
+are welcome to go their own way.

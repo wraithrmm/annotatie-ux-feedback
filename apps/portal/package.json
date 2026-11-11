@@ -1,6 +1,7 @@
 {
   "name": "@annotatie/portal",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts",

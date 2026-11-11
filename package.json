@@ -1,6 +1,7 @@
 {
   "name": "annotatie",
   "private": true,
+  "license": "MIT",
   "description": "Annotatie: pinned user feedback, agent replies through an approval gate.",
   "type": "module",
   "engines": {

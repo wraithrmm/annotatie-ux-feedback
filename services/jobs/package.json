@@ -1,6 +1,7 @@
 {
   "name": "@annotatie/jobs",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "main": "src/handler.ts",
   "dependencies": {
