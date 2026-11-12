@@ -49,6 +49,8 @@ jobs:
 
   infra:
     needs: test
+    # Needs AWS: a fork plans only once its own bootstrap has set the variables.
+    if: github.repository == 'wraithrmm/annotatie-ux-feedback' || vars.AWS_ACCOUNT_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

@@ -92,6 +92,29 @@ git remote add origin git@github.com:<owner>/annotatie.git && git push -u origin
 **6. Confirm** the AWS Budget and SNS alarm emails (one click each), then open
 `https://annotatie.consulteasy.co.uk/board/`. It shows the deployed commit.
 
+## Deploy your own copy
+
+The workflows contain nothing specific to one AWS account or domain. Everything comes from repository
+variables that the bootstrap writes, so a fork deploys to your own infrastructure without code changes:
+
+1. Fork this repository. Until step 3 is done, `deploy` only prints a notice and the CI `infra` plan is
+   skipped; nothing tries to reach AWS.
+2. Follow **One-time setup** above against your own AWS account and Cloudflare zone. In `bootstrap.tfvars`
+   also set:
+   ```hcl
+   github_owner       = "<your GitHub user or org>"
+   github_repo        = "<your fork's name>"
+   create_github_repo = false                     # the fork already exists
+   domain_name        = "feedback.example.com"
+   cloudflare_zone    = "example.com"
+   ```
+   The bootstrap trusts only your fork for OIDC and writes its Actions variables (`AWS_ACCOUNT_ID`,
+   `AWS_REGION`, `DOMAIN_NAME`, …).
+3. Push to your fork's `main`. It deploys to your account.
+
+To take later updates, sync your fork with this repository. Keep your changes out of tracked files where
+you can (they belong in `bootstrap.tfvars` and the repository variables), and syncing stays conflict-free.
+
 ## Cost proof (end of P0)
 
 Leave it running for a week, then check Cost Explorer filtered by the tag `project = annotatie`. The

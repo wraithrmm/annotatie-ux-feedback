@@ -21,7 +21,11 @@ env:
   NODE_VERSION: 22
 
 jobs:
+  # A fork deploys only once its own bootstrap has set the repository variables
+  # (see "Deploy your own copy" in the README). The upstream repo always runs, so
+  # a missing variable there fails loudly instead of silently skipping a deploy.
   deploy:
+    if: github.repository == 'wraithrmm/annotatie-ux-feedback' || vars.AWS_ACCOUNT_ID != ''
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
@@ -120,3 +124,14 @@ jobs:
           curl -fsS -o /dev/null "$BASE/sdk/v1/annotatie.js"
           curl -fsS -o /dev/null "$BASE/sdk/v1/annotatie-node.mjs"
           echo "Deployed ${GITHUB_SHA} to $BASE" >> "$GITHUB_STEP_SUMMARY"
+
+  not-configured:
+    if: github.repository != 'wraithrmm/annotatie-ux-feedback' && vars.AWS_ACCOUNT_ID == ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Explain the skipped deploy
+        run: |
+          msg="Deploy skipped: this repository has no AWS_ACCOUNT_ID variable yet. Run infra/bootstrap first (README: Deploy your own copy)."
+          echo "::notice::$msg"
+          echo "$msg" >> "$GITHUB_STEP_SUMMARY"
